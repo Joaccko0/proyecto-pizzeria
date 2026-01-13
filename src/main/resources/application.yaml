@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: pizzeria-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pizzeria_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update # CUIDADO: En prod será 'validate'. 'update' crea/modifica tablas automáticamente mientras desarrollas.
+    show-sql: true # Muestra las queries en consola (genial para depurar)
+    properties:
+      hibernate:
+        format_sql: true # Formatea las queries para que sean legibles
+
+server:
+  port: 8080

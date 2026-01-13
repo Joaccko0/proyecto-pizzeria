@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  postgres-db:
+    image: postgres:16-alpine  # Versión ligera y estable
+    container_name: pizzeria_db
+    ports:
+      - "5432:5432"  # Puerto Local : Puerto Contenedor
+    environment:
+      - POSTGRES_DB=pizzeria_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Persistencia de datos (para no perderlos al reiniciar)
+    restart: always
+
+volumes:
+  postgres_data:
