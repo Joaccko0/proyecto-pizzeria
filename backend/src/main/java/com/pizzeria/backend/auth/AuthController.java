@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.pizzeria.backend.dto.auth.AuthenticationResponse;
 import com.pizzeria.backend.dto.auth.LoginRequest;
+import com.pizzeria.backend.dto.auth.RegisterRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +24,13 @@ public class AuthController {
             @RequestBody LoginRequest request
     ) {
         return ResponseEntity.ok(service.login(request));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<AuthenticationResponse> register(
+            @RequestBody RegisterRequest request
+    ) {
+        return ResponseEntity.ok(service.register(request));
     }
     
 }
