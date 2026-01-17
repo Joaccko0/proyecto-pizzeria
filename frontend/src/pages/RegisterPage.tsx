@@ -1,47 +1,53 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom'; // Importamos Link para navegar al login
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Mail, Lock, Pizza, User } from "lucide-react";
 
 export default function RegisterPage() {
-    // Estado único para el formulario (más limpio que muchos useState sueltos)
+    // Objeto único para todos los campos del formulario (mejor que múltiples useState)
     const [formData, setFormData] = useState({
-            firstName: '',
-            lastName: '',
-            email: '',
-            password: ''
-        });
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: ''
+    });
 
+    // Feedback al usuario
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     
+    // Hook para registrar; hook para navegar tras éxito
     const { register } = useAuth();
     const navigate = useNavigate();
 
-    // Manejador genérico para todos los inputs
+    // Actualiza formData por campo y limpia validación nativa
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
+        // Actualiza solo el campo editado, mantiene los otros igual (spread operator)
         setFormData(prev => ({
             ...prev,
             [id]: value
         }));
-        
-        // Limpiamos validación nativa al escribir
+        // Limpia mensaje de error nativo del navegador al escribir
         e.target.setCustomValidity('');
     };
 
+    // Maneja envío del formulario: intenta registro y navega o muestra error
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
+        setError(''); // Limpia error anterior
         setIsLoading(true);
         
         try {
+            // Llama register del contexto (crea usuario y guarda JWT)
             await register(formData);
-            navigate('/dashboard'); // Redirige directo al dashboard tras registro exitoso
+            // Si no lanzó error, el JWT fue guardado; navega al dashboard
+            navigate('/dashboard');
         } catch (err) {
+            // Si falla (email duplicado, datos inválidos, servidor offline, etc.)
             setError('Error al registrar. Verifica los datos o intenta con otro correo.');
         } finally {
             setIsLoading(false);
@@ -52,7 +58,7 @@ return (
         <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-[#F2EDE4] to-[#E5D9D1] p-8">
             <div className="mx-auto w-full max-w-[500px] space-y-8 bg-white rounded-2xl shadow-2xl p-8">
                 
-                {/* Encabezado */}
+                {/* Título y descripción */}
                 <div className="flex flex-col space-y-2 text-center">
                     <div className="flex justify-center">
                         <Pizza className="h-10 w-10 text-primary mb-2" />
@@ -63,7 +69,7 @@ return (
                     </p>
                 </div>
                 
-                {/* Error */}
+                {/* Muestra error si registro falló */}
                 {error && (
                     <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-md font-medium animate-in fade-in-50">
                         {error}
@@ -72,7 +78,7 @@ return (
 
                 <form onSubmit={handleSubmit} className="space-y-4">
 
-                    {/* Nombre y Apellido */}
+                    {/* Nombre y Apellido en dos columnas */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="firstName">Nombre</Label>
@@ -105,7 +111,7 @@ return (
                         </div>
                     </div>
 
-                    {/* Email */}
+                    {/* Email: único en el backend */}
                     <div className="space-y-2">
                         <Label htmlFor="email">Correo Electrónico</Label>
                         <div className="relative">
@@ -123,7 +129,7 @@ return (
                         </div>
                     </div>
 
-                    {/* Contraseña */}
+                    {/* Contraseña: mínimo 6 caracteres */}
                     <div className="space-y-2">
                         <Label htmlFor="password">Contraseña</Label>
                         <div className="relative">
@@ -141,6 +147,7 @@ return (
                         </div>
                     </div>
 
+                    {/* Botón: deshabilita y muestra spinner durante registro */}
                     <Button 
                         className="w-full h-11 font-bold text-base bg-[#F24452] hover:bg-[#F23D3D] text-white mt-4" 
                         type="submit" 
@@ -157,7 +164,7 @@ return (
                     </Button>
                 </form>
 
-                {/* Footer Link */}
+                {/* Link a login para usuarios existentes */}
                 <div className="text-center text-sm">
                     <span className="text-muted-foreground">¿Ya tienes una cuenta? </span>
                     <Link to="/login" className="font-medium text-primary hover:underline underline-offset-4">

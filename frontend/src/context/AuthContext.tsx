@@ -3,32 +3,35 @@ import client from '../api/client';
 import type { ReactNode } from 'react';
 import type { LoginRequest, AuthResponse, RegisterRequest } from '../types/auth.types';
 
-// Definimos qué datos y funciones tendrá nuestro contexto
+// Define la forma del contexto y qué métodos/datos expone a los componentes
 interface AuthContextType {
-    token: string | null;
-    isAuthenticated: boolean;
-    login: (data: LoginRequest) => Promise<void>;
-    logout: () => void;
-    register: (data: RegisterRequest) => Promise<void>;
+    token: string | null; // JWT actual (null si no autenticado)
+    isAuthenticated: boolean; // Conveniencia: true si hay token
+    login: (data: LoginRequest) => Promise<void>; // Autentica usuario
+    logout: () => void; // Limpia sesión
+    register: (data: RegisterRequest) => Promise<void>; // Registra nuevo usuario
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    // Al iniciar, buscamos si ya había un token guardado (para que no te saque al recargar F5)
+    // Recupera JWT de localStorage si existe (permite mantener sesión tras F5)
     const [token, setToken] = useState<string | null>(localStorage.getItem('jwt_token'));
 
+    // Registra un nuevo usuario: envía datos al backend y guarda el JWT retornado
     const register = async (data: RegisterRequest) => {
         try {
             const response = await client.post<AuthResponse>('/auth/register', data);
             setToken(response.data.token);
+            // localStorage se sincroniza automáticamente en useEffect
         } catch (error) {
             console.error("Error en registro:", error);
-            throw error;
+            throw error; // Lanza error hacia la UI para mostrar mensaje
         }
     };
 
-    // Efecto: Mantener sincronizado el estado con el LocalStorage
+    // Efecto: Mantiene localStorage sincronizado con el estado del token
+    // Si token existe, lo guarda; si no, lo elimina (limpieza en logout)
     useEffect(() => {
         if (token) {
             localStorage.setItem('jwt_token', token);
@@ -37,27 +40,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [token]);
 
+    // Autentica usuario: envía credenciales y guarda JWT si son válidas
     const login = async (credentials: LoginRequest) => {
         try {
-            // Llamamos al backend real
             const response = await client.post<AuthResponse>('/auth/login', credentials);
-            
-            // Si todo sale bien, guardamos el token
-            setToken(response.data.token);
+            setToken(response.data.token); // Activa el interceptor de request automáticamente
         } catch (error) {
             console.error("Error en login:", error);
-            throw error; // Re-lanzamos para que la UI muestre el error
+            throw error; // La página de login captura esto y muestra error
         }
     };
 
+    // Cierra sesión: limpia el token (que a su vez limpia localStorage por el useEffect)
     const logout = () => {
         setToken(null);
     };
 
+    // Proporciona datos y funciones a componentes descendientes
     return (
         <AuthContext.Provider value={{ 
             token, 
-            isAuthenticated: !!token, // true si hay token, false si es null
+            isAuthenticated: !!token, // Conversión a boolean: null → false, token → true
             login, 
             logout,
             register
@@ -67,7 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 };
 
-// Hook personalizado para usar el contexto fácil
+// Hook para acceder al contexto Auth en cualquier componente (dentro de AuthProvider)
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {

@@ -8,14 +8,18 @@ import { Loader2, Mail, Lock, Pizza } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function LoginPage() {
+    // Campos del formulario
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    // Feedback al usuario
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     
+    // Hook para autenticar; hook para navegar tras éxito
     const { login } = useAuth();
     const navigate = useNavigate();
 
+    // Valida email en tiempo real: usa validación nativa del navegador
     const handleEmailValidation = (e: React.ChangeEvent<HTMLInputElement>) => {
         const emailInput = e.target;
         if (!emailInput.validity.valid) {
@@ -30,6 +34,7 @@ export default function LoginPage() {
         setEmail(emailInput.value);
     };
 
+    // Valida password en tiempo real
     const handlePasswordValidation = (e: React.ChangeEvent<HTMLInputElement>) => {
         const passwordInput = e.target;
         if (!passwordInput.validity.valid && passwordInput.validity.valueMissing) {
@@ -40,15 +45,19 @@ export default function LoginPage() {
         setPassword(passwordInput.value);
     };
 
+    // Maneja el envío del formulario: intenta login y navega o muestra error
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
+        setError(''); // Limpia error anterior
         setIsLoading(true);
         
         try {
+            // Llama login del contexto (comunicación con backend)
             await login({ email, password });
+            // Si no lanzó error, el JWT fue guardado; navega al dashboard
             navigate('/dashboard'); 
         } catch (err) {
+            // Si falla (credenciales inválidas, servidor offline, etc.)
             setError('Credenciales inválidas. Verifica tus datos.');
         } finally {
             setIsLoading(false);
@@ -59,7 +68,7 @@ export default function LoginPage() {
         <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-[#F2EDE4] to-[#E5D9D1] p-8">
             <div className="mx-auto w-full max-w-[400px] space-y-8 bg-white rounded-2xl shadow-2xl p-8">
                 
-                {/* Encabezado del formulario */}
+                {/* Título y descripción */}
                 <div className="flex flex-col space-y-2 text-center">
                     <div className="flex justify-center">
                         <Pizza className="h-10 w-10 text-primary mb-4" />
@@ -70,14 +79,14 @@ export default function LoginPage() {
                     </p>
                 </div>
 
-                {/* Mensaje de Error */}
+                {/* Muestra error si login falló */}
                 {error && (
                     <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-md font-medium animate-in fade-in-50">
                         {error}
                     </div>
                 )}
 
-                {/* Formulario */}
+                {/* Campos de email y contraseña */}
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-4">
                         <div className="space-y-2">
@@ -119,6 +128,7 @@ export default function LoginPage() {
                         </div>
                     </div>
 
+                    {/* Botón: deshabilita y muestra spinner durante login */}
                     <Button 
                         className="w-full h-11 font-bold text-base bg-[#F24452] hover:bg-[#F23D3D] active:bg-[#E03333] text-white transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed" 
                         type="submit" 
@@ -135,7 +145,7 @@ export default function LoginPage() {
                     </Button>
                 </form>
 
-                {/* Enlace para registrarse */}
+                {/* Link a registro para nuevos usuarios */}
                 <div className="text-center text-sm">
                     <span className="text-muted-foreground">¿No tienes una cuenta? </span>
                     <Link to="/register" className="font-medium text-primary hover:underline underline-offset-4">
