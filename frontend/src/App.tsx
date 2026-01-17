@@ -4,6 +4,8 @@ import { BusinessProvider } from './context/BusinessContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardLayout from './layouts/DashboardLayout';
+import ProductsPage from './pages/ProductsPage';
+import { Toaster } from "@/components/ui/sonner";
 
 // Componente que protege rutas: solo deja pasar si isAuthenticated es true
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -55,14 +57,16 @@ function App() {
                                 {/* Rutas Hijas (se renderizan en <Outlet />) */}
                                 <Route index element={<DashboardHome />} />
                                 
-                                {/* AQUÍ PONDREMOS PRODUCTOS LUEGO */}
-                                {/* <Route path="products" element={<ProductsPage />} /> */}
+                                <Route path="products" element={<ProductsPage />} />
                                 
                         </Route>
                         
                         {/* Ruta catch-all: cualquier otra ruta redirige a dashboard */}
                         <Route path="*" element={<Navigate to="/dashboard" />} />
                     </Routes>
+                    
+                    {/* Sistema de notificaciones global */}
+                    <Toaster position="top-right" richColors />
                 </BusinessProvider>
             </AuthProvider>
         </BrowserRouter>

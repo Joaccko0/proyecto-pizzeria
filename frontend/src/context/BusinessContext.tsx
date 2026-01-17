@@ -27,7 +27,7 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
                 // Pero para avanzar YA, vamos a "hardcodear" el objeto si el usuario está logueado.
                 
                 // Opción A (Hardcode temporal para MVP Rápido):
-                const mockBusiness = { id: 1, name: 'Pizzeria La Fabrica' }; 
+                const mockBusiness = { id: 2, name: 'Pizzeria La Fabrica' }; 
                 setCurrentBusiness(mockBusiness);
 
             } catch (error) {
