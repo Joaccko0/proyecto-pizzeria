@@ -46,37 +46,51 @@
 
 :root {
   --radius: 0.625rem;
-  --background: #F2EDE4;
-  --foreground: #0D0D0D;
+  
+  /* Paleta personalizada */
+  --primary-red: #F24452;
+  --primary-red-dark: #F23D3D;
+  --cream: #F2EDE4;
+  --cream-dark: #E5D9D1;
+  --gray-dark: #262626;
+  --black: #0D0D0D;
+  
+  /* Variables shadcn */
+  --background: var(--cream);
+  --foreground: var(--black);
   --card: #FFFFFF;
-  --card-foreground: #0D0D0D;
+  --card-foreground: var(--black);
   --popover: #FFFFFF;
-  --popover-foreground: #0D0D0D;
-  --primary: #F24452;
+  --popover-foreground: var(--black);
+  --primary: var(--primary-red);
   --primary-foreground: #FFFFFF;
-  --secondary: #F2EDE4;
-  --secondary-foreground: #262626;
-  --muted: #F2EDE4;
-  --muted-foreground: #262626;
-  --accent: #F23D3D;
+  --secondary: var(--cream-dark);
+  --secondary-foreground: var(--gray-dark);
+  --muted: var(--cream);
+  --muted-foreground: var(--gray-dark);
+  --accent: var(--primary-red-dark);
   --accent-foreground: #FFFFFF;
-  --destructive: #F24452;
-  --border: #E5D9D1;
+  --destructive: var(--primary-red-dark);
+  --border: var(--cream-dark);
   --input: #FFFFFF;
-  --ring: #F24452;
+  --ring: var(--primary-red);
+  
+  /* Charts (mantener) */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
+  
+  /* Sidebar (adaptar) */
+  --sidebar: var(--cream);
+  --sidebar-foreground: var(--black);
+  --sidebar-primary: var(--primary-red);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: var(--cream-dark);
+  --sidebar-accent-foreground: var(--gray-dark);
+  --sidebar-border: var(--cream-dark);
+  --sidebar-ring: var(--primary-red);
 }
 
 .dark {

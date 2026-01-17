@@ -50,6 +50,8 @@ public class OrderItem {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
 
+    private String name;
+
     // VALIDACIÓN: Asegura que sea Producto O Combo, pero no ambos.
     @PrePersist
     @PreUpdate

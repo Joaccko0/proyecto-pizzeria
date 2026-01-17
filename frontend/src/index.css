@@ -1,1 +1,44 @@
+@config "../tailwind.config.ts";
 @import "tailwindcss";
+
+/* Estilos globales consistentes */
+@layer base {
+  /* Tipografía */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold text-gray-dark;
+  }
+  
+  h1 { @apply text-3xl; }
+  h2 { @apply text-2xl; }
+  h3 { @apply text-xl; }
+  h4 { @apply text-lg; }
+  
+  /* Scrollbar personalizado */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: var(--cream);
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: var(--cream-dark);
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-dark);
+  }
+}
+
+@layer utilities {
+  .transition-smooth {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .hover-lift {
+    @apply hover:scale-105 hover:shadow-lg;
+  }
+}

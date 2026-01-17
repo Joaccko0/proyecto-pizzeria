@@ -4,6 +4,7 @@ import { BusinessProvider } from './context/BusinessContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardLayout from './layouts/DashboardLayout';
+import OrdersPage from './pages/OrdersPage';
 import ProductsPage from './pages/ProductsPage';
 import { Toaster } from "@/components/ui/sonner";
 
@@ -55,7 +56,7 @@ function App() {
                                 } 
                             >
                                 {/* Rutas Hijas (se renderizan en <Outlet />) */}
-                                <Route index element={<DashboardHome />} />
+                                <Route index element={<OrdersPage />} />
                                 
                                 <Route path="products" element={<ProductsPage />} />
                                 

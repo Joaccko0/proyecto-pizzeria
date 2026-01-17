@@ -47,30 +47,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response); // Si no tiene, que siga (luego rebotará si la ruta es privada)
             return;
         }
+        try {
+            // 2. Extraer token
+            String jwt = authHeader.substring(7);
+            String userEmail = jwtService.extractUsername(jwt);
 
-        // 2. Extraer token
-        String jwt = authHeader.substring(7);
-        String userEmail = jwtService.extractUsername(jwt);
-
-        // 3. Si hay email y no está autenticado aún en el contexto
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            
-            // Buscar usuario en BD
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-
-            // Validar token
-            if (jwtService.isTokenValid(jwt, userDetails)) {
-                // Crear objeto de autenticación
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            // 3. Si hay email y no está autenticado aún en el contexto
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 
-                // MARCAR AL USUARIO COMO AUTENTICADO
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                // Buscar usuario en BD
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+
+                // Validar token
+                if (jwtService.isTokenValid(jwt, userDetails)) {
+                    // Crear objeto de autenticación
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    
+                    // MARCAR AL USUARIO COMO AUTENTICADO
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (Exception e) {
+            // Log the error but don't block the request - let Spring Security handle it
+            logger.error("Cannot set user authentication: {}", e);
         }
         // Continuar la cadena
         filterChain.doFilter(request, response);
