@@ -1,0 +1,115 @@
+import { useState } from 'react';
+import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useBusiness } from '../context/BusinessContext';
+import { 
+    LayoutDashboard, 
+    Pizza, 
+    Users, 
+    ShoppingBag, 
+    LogOut, 
+    Menu, 
+    X 
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+export default function DashboardLayout() {
+    const { logout } = useAuth();
+    const { currentBusiness } = useBusiness();
+    const location = useLocation(); // Para saber en qué ruta estamos y pintarla de color
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    // Definimos las opciones del menú
+    const menuItems = [
+        { label: 'Panel Principal', icon: LayoutDashboard, path: '/dashboard' },
+        { label: 'Productos', icon: Pizza, path: '/dashboard/products' },
+        { label: 'Pedidos', icon: ShoppingBag, path: '/dashboard/orders' },
+        { label: 'Clientes', icon: Users, path: '/dashboard/customers' },
+    ];
+
+    return (
+        <div className="flex h-screen bg-gray-50 text-gray-900">
+            
+            {/* --- SIDEBAR (Escritorio) --- */}
+            <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 shadow-sm">
+                
+                {/* Logo del Negocio */}
+                <div className="p-6 border-b border-gray-100">
+                    <div className="flex items-center gap-2 font-bold text-xl text-orange-600">
+                        <Pizza className="h-6 w-6" />
+                        <span>{currentBusiness?.name || 'Cargando...'}</span>
+                    </div>
+                </div>
+
+                {/* Navegación */}
+                <nav className="flex-1 p-4 space-y-1">
+                    {menuItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = location.pathname === item.path;
+                        
+                        return (
+                            <Link
+                                key={item.path}
+                                to={item.path}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                                    isActive 
+                                    ? 'bg-orange-50 text-orange-600' 
+                                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                }`}
+                            >
+                                <Icon className="h-5 w-5" />
+                                {item.label}
+                            </Link>
+                        );
+                    })}
+                </nav>
+
+                {/* Footer Sidebar */}
+                <div className="p-4 border-t border-gray-100">
+                    <Button 
+                        variant="ghost" 
+                        className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
+                        onClick={logout}
+                    >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Cerrar Sesión
+                    </Button>
+                </div>
+            </aside>
+
+            {/* --- CONTENIDO PRINCIPAL --- */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+                
+                {/* Header Móvil (Solo visible en celular) */}
+                <header className="md:hidden flex items-center justify-between p-4 bg-white border-b shadow-sm">
+                    <span className="font-bold text-orange-600">PizzeriaOS</span>
+                    <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+                        {isMobileMenuOpen ? <X /> : <Menu />}
+                    </Button>
+                </header>
+
+                {/* Menú Móvil Desplegable */}
+                {isMobileMenuOpen && (
+                    <div className="md:hidden absolute top-16 left-0 w-full bg-white border-b shadow-lg z-50 p-4 flex flex-col gap-2">
+                        {menuItems.map((item) => (
+                            <Link 
+                                key={item.path} 
+                                to={item.path} 
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="p-3 hover:bg-gray-50 rounded-md flex gap-2"
+                            >
+                                <item.icon className="w-5 h-5" /> {item.label}
+                            </Link>
+                        ))}
+                         <Button variant="destructive" onClick={logout} className="mt-2">Salir</Button>
+                    </div>
+                )}
+
+                {/* ÁREA DE CONTENIDO (Aquí se renderizan las páginas) */}
+                <main className="flex-1 overflow-y-auto p-8">
+                    <Outlet /> {/* <-- AQUÍ VA LO QUE CAMBIA (Productos, Dashboard, etc) */}
+                </main>
+            </div>
+        </div>
+    );
+}

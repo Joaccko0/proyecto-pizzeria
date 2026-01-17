@@ -37,15 +37,15 @@ public class ProductService {
         return productMapper.toResponse(savedProduct);
     }
 
-    // --- LEER TODOS (De mi negocio) ---
+    // --- LEER TODOS (Activos) (De mi negocio) ---
     @Transactional(readOnly = true) // Optimiza el rendimiento para lectura
     public List<ProductResponse> getAllProducts(Long businessId) {
-        List<Product> products = productRepository.findByBusinessId(businessId);
-        
-        // Convertir lista de Entidades a lista de DTOs
-        return products.stream()
-                .map(productMapper::toResponse)
-                .toList();
+            // Usamos el método que filtra por active = true
+            List<Product> products = productRepository.findByBusinessIdAndActiveTrue(businessId);
+            
+            return products.stream()
+                    .map(productMapper::toResponse)
+                    .toList();
     }
 
     // --- EDITAR ---
@@ -64,4 +64,14 @@ public class ProductService {
         return productMapper.toResponse(updatedProduct);
     }
     
+    // NUEVO: Borrado Lógico
+    @Transactional
+    public void deleteProduct(Long businessId, Long productId) {
+        Product product = productRepository.findByIdAndBusinessId(productId, businessId)
+                .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado"));
+        
+        // Esto mantiene la integridad de los pedidos viejos que tengan este producto.
+        product.setActive(false);
+        productRepository.save(product);
+    }
 }
