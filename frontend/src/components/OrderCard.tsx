@@ -55,9 +55,15 @@ export function OrderCard({ order, onClick, isDragging }: OrderCardProps) {
             )}
 
             {/* Items */}
-            <div className="flex items-center gap-1.5 mb-2 text-xs text-[#262626]">
-                <span className="font-medium">{itemCount}</span>
-                <span>item{itemCount !== 1 ? 's' : ''}</span>
+            <div className="mb-2 text-xs text-[#262626]">
+                <div className="font-medium mb-1">Items:</div>
+                <div className="space-y-1">
+                    {order.items.map((item, index) => (
+                        <div key={index} className="text-xs text-[#404040] truncate">
+                            • {item.name} {item.quantity > 1 && `(x${item.quantity})`}
+                        </div>
+                    ))}
+                </div>
             </div>
 
             {/* Footer: Total, Método pago, Método entrega */}
