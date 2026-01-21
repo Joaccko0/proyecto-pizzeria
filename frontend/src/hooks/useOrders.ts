@@ -6,7 +6,8 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { OrderService } from '../services/order.service';
-import type { OrderResponse, CreateOrderRequest, OrderStatus } from '../types/order.types';
+import type { OrderResponse, CreateOrderRequest, OrderStatus, PaymentStatus, PaymentMethod, DeliveryMethod } from '../types/order.types';
+import { OrderStatusLabels } from '../types/order.types';
 
 interface UseOrdersReturn {
     orders: OrderResponse[];
@@ -15,6 +16,7 @@ interface UseOrdersReturn {
     loadOrders: () => Promise<void>;
     createOrder: (data: CreateOrderRequest) => Promise<boolean>;
     updateOrderStatus: (orderId: number, newStatus: OrderStatus) => Promise<boolean>;
+    updateOrderDetails: (orderId: number, details: { paymentStatus?: PaymentStatus; paymentMethod?: PaymentMethod; deliveryMethod?: DeliveryMethod }) => Promise<boolean>;
     cancelOrder: (orderId: number) => Promise<boolean>;
 }
 
@@ -63,11 +65,13 @@ export function useOrders(businessId: number | undefined): UseOrdersReturn {
         try {
             const newOrder = await OrderService.createOrder(businessId, data);
             setOrders(prev => [newOrder, ...prev]); // Agregar al inicio
-            toast.success('Pedido creado exitosamente');
+            toast.success('Pedido creado', {
+                description: `#${newOrder.id} creado correctamente`
+            });
             return true;
         } catch (err: any) {
             const message = err.response?.data?.message || 'Error al crear pedido';
-            toast.error(message);
+            toast.error('No se pudo crear el pedido', { description: message });
             return false;
         }
     };
@@ -81,21 +85,64 @@ export function useOrders(businessId: number | undefined): UseOrdersReturn {
     ): Promise<boolean> => {
         if (!businessId) return false;
 
+        // Optimistic update: aplicar cambio local inmediatamente
+        let previous: OrderResponse | null = null;
+        setOrders(prev => prev.map(o => {
+            if (o.id === orderId) {
+                previous = o;
+                return { ...o, orderStatus: newStatus };
+            }
+            return o;
+        }));
+
         try {
             const updatedOrder = await OrderService.updateOrderStatus(businessId, orderId, newStatus);
-            
-            // Actualizar en el estado local
-            setOrders(prev =>
-                prev.map(order =>
-                    order.id === orderId ? updatedOrder : order
-                )
-            );
-
-            toast.success('Estado actualizado');
+            // Reemplazar con la versión del servidor
+            setOrders(prev => prev.map(o => (o.id === orderId ? updatedOrder : o)));
+            toast.success('Estado actualizado', {
+                description: OrderStatusLabels[newStatus]
+            });
             return true;
         } catch (err: any) {
+            // Revertir
+            if (previous) {
+                setOrders(prev => prev.map(o => (o.id === orderId ? previous as OrderResponse : o)));
+            }
             const message = err.response?.data?.message || 'Error al actualizar estado';
-            toast.error(message);
+            toast.error('No se pudo actualizar el estado', { description: message });
+            return false;
+        }
+    };
+
+    /**
+     * Actualizar detalles (pago/entrega) de una orden
+     */
+    const updateOrderDetails = async (
+        orderId: number,
+        details: { paymentStatus?: PaymentStatus; paymentMethod?: PaymentMethod; deliveryMethod?: DeliveryMethod }
+    ): Promise<boolean> => {
+        if (!businessId) return false;
+
+        let previous: OrderResponse | null = null;
+        setOrders(prev => prev.map(o => {
+            if (o.id === orderId) {
+                previous = o;
+                return { ...o, ...details };
+            }
+            return o;
+        }));
+
+        try {
+            const updatedOrder = await OrderService.updateOrderDetails(businessId, orderId, details);
+            setOrders(prev => prev.map(o => (o.id === orderId ? updatedOrder : o)));
+            toast.success('Detalles actualizados');
+            return true;
+        } catch (err: any) {
+            if (previous) {
+                setOrders(prev => prev.map(o => (o.id === orderId ? previous as OrderResponse : o)));
+            }
+            const message = err.response?.data?.message || 'Error al actualizar detalles';
+            toast.error('No se pudieron actualizar los detalles', { description: message });
             return false;
         }
     };
@@ -107,16 +154,16 @@ export function useOrders(businessId: number | undefined): UseOrdersReturn {
         if (!businessId) return false;
 
         try {
-            await OrderService.cancelOrder(businessId, orderId);
-            
-            // Remover del estado local
-            setOrders(prev => prev.filter(order => order.id !== orderId));
-            
-            toast.success('Pedido cancelado');
+            const updated = await OrderService.cancelOrder(businessId, orderId);
+            // Actualizar en el estado local (quedará como CANCELLED)
+            setOrders(prev => prev.map(o => (o.id === orderId ? updated : o)));
+            toast.success('Pedido cancelado', {
+                description: `#${orderId} marcado como cancelado`
+            });
             return true;
         } catch (err: any) {
             const message = err.response?.data?.message || 'Error al cancelar pedido';
-            toast.error(message);
+            toast.error('No se pudo cancelar el pedido', { description: message });
             return false;
         }
     };
@@ -128,6 +175,7 @@ export function useOrders(businessId: number | undefined): UseOrdersReturn {
         loadOrders,
         createOrder,
         updateOrderStatus,
+        updateOrderDetails,
         cancelOrder
     };
 }

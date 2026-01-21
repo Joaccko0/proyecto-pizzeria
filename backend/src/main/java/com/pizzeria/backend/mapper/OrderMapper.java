@@ -18,7 +18,7 @@ public interface OrderMapper {
 
     @Mapping(target = "productId", source = "product.id")
     @Mapping(target = "comboId", source = "combo.id")
-    @Mapping(target = "name", source = "item", qualifiedByName = "resolveName") 
+    @Mapping(target = "name", source = "item", qualifiedByName = "resolveName")
     OrderResponse.OrderItemResponse toItemResponse(OrderItem item);
 
     @Named("resolveName")

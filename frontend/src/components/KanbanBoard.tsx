@@ -9,7 +9,8 @@ import {
     DragOverlay,
     PointerSensor,
     useSensor,
-    useSensors
+    useSensors,
+    closestCenter
 } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import type { OrderResponse, OrderStatus } from '../types/order.types';
@@ -40,7 +41,7 @@ export function KanbanBoard({ orders, onOrderClick, onStatusChange }: KanbanBoar
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 8 // Requiere arrastrar 8px para activar
+                distance: 5 // Requiere arrastrar 5px para activar (más reactivo)
             }
         })
     );
@@ -73,22 +74,27 @@ export function KanbanBoard({ orders, onOrderClick, onStatusChange }: KanbanBoar
         if (!over) return;
 
         const orderId = Number(active.id);
-        const newStatus = over.id as OrderStatus;
-        
-        // Verificar que sea un estado válido
-        if (!KANBAN_STATUSES.includes(newStatus)) return;
+        const overId = over.id;
+        const overStatus: OrderStatus | undefined =
+            (KANBAN_STATUSES as readonly (string | number)[]).includes(overId as string)
+                ? (overId as OrderStatus)
+                : orders.find(o => o.id === Number(overId))?.orderStatus;
+
+        // Si no pudimos determinar estado destino, salir
+        if (!overStatus) return;
 
         // Verificar si cambió de estado
         const order = orders.find(o => o.id === orderId);
-        if (!order || order.orderStatus === newStatus) return;
+        if (!order || order.orderStatus === overStatus) return;
 
         // Actualizar estado
-        await onStatusChange(orderId, newStatus);
+        await onStatusChange(orderId, overStatus);
     };
 
     return (
         <DndContext
             sensors={sensors}
+            collisionDetection={closestCenter}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
         >

@@ -128,8 +128,35 @@ public class OrderService {
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Pedido no encontrado"));
         
         order.setOrderStatus(request.orderStatus());
+        // Si vienen cambios en paymentStatus, aplicarlos también
+        if (request.paymentStatus() != null) {
+            order.setPaymentStatus(request.paymentStatus());
+        }
+
         orderRepository.save(order);
+
+        return orderMapper.toResponse(order);
+    }
+
+    @Transactional
+    public OrderResponse updateOrderDetails(Long businessId, Long orderId, 
+            com.pizzeria.backend.dto.order.UpdateOrderDetailsRequest request) {
+        Order order = orderRepository.findByIdAndBusinessId(orderId, businessId)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Pedido no encontrado"));
         
+        // Actualizar solo los campos que vengan
+        if (request.paymentStatus() != null) {
+            order.setPaymentStatus(request.paymentStatus());
+        }
+        if (request.paymentMethod() != null) {
+            order.setPaymentMethod(request.paymentMethod());
+        }
+        if (request.deliveryMethod() != null) {
+            order.setDeliveryMethod(request.deliveryMethod());
+        }
+
+        orderRepository.save(order);
+
         return orderMapper.toResponse(order);
     }
 }

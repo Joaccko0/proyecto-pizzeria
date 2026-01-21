@@ -45,11 +45,30 @@ export const OrderService = {
     },
 
     /**
+     * Actualizar detalles de pago/entrega de una orden
+     */
+    async updateOrderDetails(
+        businessId: number,
+        orderId: number,
+        details: { paymentStatus?: string; paymentMethod?: string; deliveryMethod?: string }
+    ): Promise<OrderResponse> {
+        const response = await apiClient.patch<OrderResponse>(
+            `/orders/${orderId}/details`,
+            details,
+            { params: { businessId } }
+        );
+        return response.data;
+    },
+
+    /**
      * Eliminar (cancelar) una orden
      */
-    async cancelOrder(businessId: number, orderId: number): Promise<void> {
-        await apiClient.delete(`/orders/${orderId}`, {
-            params: { businessId }
-        });
+    async cancelOrder(businessId: number, orderId: number): Promise<OrderResponse> {
+        const response = await apiClient.put<OrderResponse>(
+            `/orders/${orderId}`,
+            { orderStatus: 'CANCELLED' },
+            { params: { businessId } }
+        );
+        return response.data;
     }
 };

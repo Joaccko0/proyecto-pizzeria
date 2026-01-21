@@ -26,6 +26,7 @@ export default function OrdersPage() {
         loadOrders,
         createOrder,
         updateOrderStatus,
+        updateOrderDetails,
         cancelOrder
     } = useOrders(currentBusiness?.id);
 
@@ -133,6 +134,7 @@ export default function OrdersPage() {
                 open={showDetails}
                 onOpenChange={setShowDetails}
                 onCancel={handleCancelOrder}
+                onUpdateDetails={updateOrderDetails}
             />
 
             <CreateOrderDialog

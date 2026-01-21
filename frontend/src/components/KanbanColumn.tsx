@@ -45,7 +45,7 @@ export function KanbanColumn({ status, orders, onOrderClick }: KanbanColumnProps
             {/* Lista de órdenes (droppable) */}
             <div
                 ref={setNodeRef}
-                className="flex-1 space-y-2 min-h-[200px] p-2 bg-[#F2EDE4]/50 rounded-lg border-2 border-dashed border-[#E5D9D1]"
+                className="flex-1 space-y-2 min-h-[500px] p-2 bg-[#F2EDE4]/50 rounded-lg border-2 border-dashed border-[#E5D9D1]"
             >
                 <SortableContext items={orderIds} strategy={verticalListSortingStrategy}>
                     {orders.length === 0 ? (

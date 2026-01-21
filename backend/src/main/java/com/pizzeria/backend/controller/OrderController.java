@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.pizzeria.backend.dto.order.CreateOrderRequest;
 import com.pizzeria.backend.dto.order.OrderResponse;
+import com.pizzeria.backend.dto.order.UpdateOrderDetailsRequest;
 import com.pizzeria.backend.dto.order.UpdateOrderStatusRequest;
 import com.pizzeria.backend.service.OrderService;
 
@@ -51,6 +53,16 @@ public class OrderController {
             @RequestBody @Valid UpdateOrderStatusRequest request
     ) {
         OrderResponse response = orderService.updateOrderStatus(businessId, id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/details")
+    public ResponseEntity<OrderResponse> updateDetails(
+            @PathVariable Long id,
+            @RequestParam Long businessId,
+            @RequestBody @Valid UpdateOrderDetailsRequest request
+    ) {
+        OrderResponse response = orderService.updateOrderDetails(businessId, id, request);
         return ResponseEntity.ok(response);
     }
 }

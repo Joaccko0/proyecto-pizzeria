@@ -1,5 +1,5 @@
 package com.pizzeria.backend.model.enums;
 
 public enum OrderStatus {
-    PENDING, READY, DELIVERED, CANCELLED
+    PENDING, PREPARING, READY, DELIVERED, CANCELLED
 }
