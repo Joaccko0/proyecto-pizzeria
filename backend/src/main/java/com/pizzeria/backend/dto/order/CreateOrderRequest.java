@@ -11,6 +11,8 @@ import jakarta.validation.constraints.NotNull;
 
 public record CreateOrderRequest(
     Long customerId, // Nullable (Cliente anónimo)
+    Long addressId, // Nullable (solo para DELIVERY con cliente)
+    String manualAddress, // Nullable (para DELIVERY sin cliente)
     @NotNull DeliveryMethod deliveryMethod,
     @NotNull PaymentMethod paymentMethod,
     PaymentStatus paymentStatus,

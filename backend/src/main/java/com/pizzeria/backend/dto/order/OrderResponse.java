@@ -13,6 +13,8 @@ public record OrderResponse(
     Long id,
     Long customerId,
     String customerName, // Para mostrar rápido en la tabla
+    Long addressId,
+    String deliveryAddress, // Dirección completa formateada
     OrderStatus orderStatus,
     PaymentStatus paymentStatus,
     PaymentMethod paymentMethod,

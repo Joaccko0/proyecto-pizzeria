@@ -33,6 +33,15 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "customer_id") // Nullable (Cliente anónimo)
     private Customer customer;
 
+    // Dirección de entrega (solo para DELIVERY)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "address_id")
+    private Address address;
+
+    // Dirección manual de texto (alternativa a address para DELIVERY sin cliente)
+    @Column(length = 500)
+    private String manualAddress;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus orderStatus;

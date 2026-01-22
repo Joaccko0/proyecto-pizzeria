@@ -12,13 +12,16 @@ import com.pizzeria.backend.dto.order.CreateOrderRequest;
 import com.pizzeria.backend.dto.order.OrderResponse;
 import com.pizzeria.backend.dto.order.UpdateOrderStatusRequest;
 import com.pizzeria.backend.mapper.OrderMapper;
+import com.pizzeria.backend.model.Address;
 import com.pizzeria.backend.model.Combo;
 import com.pizzeria.backend.model.Customer;
 import com.pizzeria.backend.model.Order;
 import com.pizzeria.backend.model.OrderItem;
 import com.pizzeria.backend.model.Product;
+import com.pizzeria.backend.model.enums.DeliveryMethod;
 import com.pizzeria.backend.model.enums.OrderStatus;
 import com.pizzeria.backend.model.enums.PaymentStatus;
+import com.pizzeria.backend.repository.AddressRepository;
 import com.pizzeria.backend.repository.ComboRepository;
 import com.pizzeria.backend.repository.CustomerRepository;
 import com.pizzeria.backend.repository.OrderRepository;
@@ -35,6 +38,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final ComboRepository comboRepository;
     private final CustomerRepository customerRepository;
+    private final AddressRepository addressRepository;
     private final OrderMapper orderMapper;
 
     @Transactional
@@ -61,6 +65,27 @@ public class OrderService {
             Customer customer = customerRepository.findByIdAndBusinessId(request.customerId(), businessId)
                     .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado"));
             order.setCustomer(customer);
+        }
+
+        // 2b. Asignar Dirección (Solo si es DELIVERY)
+        if (request.deliveryMethod() == DeliveryMethod.DELIVERY) {
+            if (request.addressId() != null) {
+                // Dirección de cliente existente
+                Address address = addressRepository.findByIdAndCustomer_BusinessId(request.addressId(), businessId)
+                        .orElseThrow(() -> new EntityNotFoundException("Dirección no encontrada"));
+                
+                // Verificar que la dirección pertenezca al cliente del pedido (si hay cliente)
+                if (request.customerId() != null && !address.getCustomer().getId().equals(request.customerId())) {
+                    throw new IllegalArgumentException("La dirección no pertenece al cliente seleccionado");
+                }
+                
+                order.setAddress(address);
+            } else if (request.manualAddress() != null && !request.manualAddress().isBlank()) {
+                // Dirección manual (sin cliente asociado)
+                order.setManualAddress(request.manualAddress());
+            } else {
+                throw new IllegalArgumentException("Para DELIVERY se requiere addressId o manualAddress");
+            }
         }
 
         // 3. Procesar Items y Calcular Total

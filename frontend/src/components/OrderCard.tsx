@@ -3,8 +3,9 @@
  * Muestra información resumida del pedido
  */
 
-import { Clock, Package, CreditCard, MapPin } from 'lucide-react';
+import { Clock, Package, CreditCard, MapPin, User, Check } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import type { OrderResponse } from '../types/order.types';
 import {
     PaymentMethodLabels,
@@ -23,7 +24,6 @@ interface OrderCardProps {
  * Clickeable para ver detalles
  */
 export function OrderCard({ order, onClick, isDragging }: OrderCardProps) {
-    const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
     const timeAgo = formatTimeAgo(order.createdAt);
 
     return (
@@ -33,7 +33,7 @@ export function OrderCard({ order, onClick, isDragging }: OrderCardProps) {
                 isDragging ? 'opacity-50 rotate-2' : ''
             }`}
         >
-            {/* Header: ID y tiempo */}
+            {/* Header: ID, tiempo y método de entrega */}
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
                     <Package className="w-4 h-4 text-[#F24452]" />
@@ -41,59 +41,79 @@ export function OrderCard({ order, onClick, isDragging }: OrderCardProps) {
                         Pedido #{order.id}
                     </span>
                 </div>
-                <div className="flex items-center gap-1 text-xs text-gray-500">
-                    <Clock className="w-3 h-3" />
-                    {timeAgo}
+                <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-[10px] py-0.5 px-2">
+                        {DeliveryMethodLabels[order.deliveryMethod]}
+                    </Badge>
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <Clock className="w-3 h-3" />
+                        {timeAgo}
+                    </div>
                 </div>
             </div>
 
             {/* Cliente */}
             {order.customerName && (
-                <div className="text-xs text-[#262626] mb-2 truncate">
-                    Cliente: <span className="font-medium">{order.customerName}</span>
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1 text-xs text-[#262626] truncate">
+                        <User className="w-3 h-3 text-gray-600" />
+                        <span className="font-medium">{order.customerName}</span>
+                    </div>
+                    {/* Estado de pago */}
+                    {order.paymentStatus !== 'PAID' && (
+                        <Badge variant="outline" className="text-[10px] py-0.5 px-2 border-amber-300 text-amber-700 bg-amber-50">
+                            {PaymentStatusLabels[order.paymentStatus]}
+                        </Badge>
+                    )}
                 </div>
             )}
 
-            {/* Items */}
-            <div className="mb-2 text-xs text-[#262626]">
-                <div className="font-medium mb-1">Items:</div>
-                <div className="space-y-1">
-                    {order.items.map((item, index) => (
-                        <div key={index} className="text-xs text-[#404040] truncate">
-                            • {item.name} {item.quantity > 1 && `(x${item.quantity})`}
-                        </div>
+            {/* Dirección de entrega (si aplica) */}
+            {order.deliveryMethod === 'DELIVERY' && order.deliveryAddress && (
+                <div className="flex items-center gap-1 mb-2 text-xs text-[#404040]">
+                    <MapPin className="w-3 h-3 text-[#F24452]" />
+                    <span className="truncate">{order.deliveryAddress}</span>
+                </div>
+            )}
+
+            {/* Items como chips, con overflow count */}
+            <div className="mb-2">
+                <div className="flex items-center justify-between mb-1">
+                    <div className="font-medium text-xs text-[#262626]">Items</div>
+                    <div className="text-[11px] text-gray-500">{order.items.length}</div>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                    {order.items.slice(0, 3).map((item, index) => (
+                        <Badge key={index} variant="secondary" className="text-[10px] px-2 py-0.5">
+                            {item.name}{item.quantity > 1 ? ` x${item.quantity}` : ''}
+                        </Badge>
                     ))}
+                    {order.items.length > 3 && (
+                        <Badge variant="outline" className="text-[10px] px-2 py-0.5">+{order.items.length - 3}</Badge>
+                    )}
                 </div>
             </div>
 
-            {/* Footer: Total, Método pago, Método entrega */}
-            <div className="flex items-center justify-between pt-2 border-t border-[#E5D9D1]">
+            {/* Footer: Datos y total */}
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E5D9D1] items-center">
                 <div className="flex items-center gap-2">
-                    {/* Método de pago */}
                     <div className="flex items-center gap-1 text-xs text-gray-600">
                         <CreditCard className="w-3 h-3" />
                         {PaymentMethodLabels[order.paymentMethod]}
                     </div>
-                    
-                    {/* Método de entrega */}
-                    <div className="flex items-center gap-1 text-xs text-gray-600">
-                        <MapPin className="w-3 h-3" />
-                        {DeliveryMethodLabels[order.deliveryMethod]}
-                    </div>
+                    {order.deliveryMethod === 'DELIVERY' && (
+                        <div className="flex items-center gap-1 text-[11px] text-gray-600 truncate">
+                            <Check className="w-3 h-3 text-green-600" />
+                            <span className="truncate">Entrega</span>
+                        </div>
+                    )}
                 </div>
-
-                {/* Total */}
-                <div className="text-sm font-bold text-[#F24452]">
+                <div className="text-sm font-bold text-[#F24452] text-right">
                     ${order.total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                 </div>
             </div>
 
-            {/* Estado de pago (si no está pagado) */}
-            {order.paymentStatus !== 'PAID' && (
-                <div className="mt-2 text-xs text-amber-600 font-medium">
-                    {PaymentStatusLabels[order.paymentStatus]}
-                </div>
-            )}
+            {/* Nota: estado de pago ya se muestra en el header si aplica */}
         </Card>
     );
 }

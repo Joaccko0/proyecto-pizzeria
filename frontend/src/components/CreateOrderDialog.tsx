@@ -1,9 +1,9 @@
 /**
  * Dialog para crear un nuevo pedido
- * Permite seleccionar productos/combos, método de pago y entrega
+ * Permite seleccionar productos/combos, asociar cliente y dirección, método de pago y entrega
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -12,15 +12,18 @@ import {
     DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+// import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Minus, Trash2 } from 'lucide-react';
+import { Plus, Minus, Trash2, User } from 'lucide-react';
 import type { Product, Combo } from '../types/inventory.types';
 import type { CreateOrderRequest, OrderItemRequest, PaymentMethod, DeliveryMethod } from '../types/order.types';
+import type { Customer } from '../types/customer.types';
 import { PaymentMethod as PM, DeliveryMethod as DM } from '../types/order.types';
+// import { CustomerService } from '../services/customer.service';
+import { CustomerAddressSelector } from './CustomerAddressSelector';
+import { toast } from 'sonner';
 
 interface CreateOrderDialogProps {
     open: boolean;
@@ -28,6 +31,9 @@ interface CreateOrderDialogProps {
     onSubmit: (data: CreateOrderRequest) => Promise<boolean>;
     products: Product[];
     combos: Combo[];
+    customers: Customer[];
+    businessId: number;
+    onCustomersChanged: () => void;
 }
 
 interface CartItem {
@@ -46,12 +52,26 @@ export function CreateOrderDialog({
     onOpenChange,
     onSubmit,
     products,
-    combos
+    combos,
+    customers,
+    businessId,
+    onCustomersChanged
 }: CreateOrderDialogProps) {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PM.CASH);
     const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>(DM.PICKUP);
+    const [selectedCustomerId, setSelectedCustomerId] = useState<number | undefined>(undefined);
+    const [selectedAddressId, setSelectedAddressId] = useState<number | undefined>(undefined);
+    const [manualAddress, setManualAddress] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showCustomerAddressDialog, setShowCustomerAddressDialog] = useState(false);
+
+    // const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
+    const selectedAddress = useMemo(() => {
+        if (!selectedCustomerId) return null;
+        const customer = customers.find(c => c.id === selectedCustomerId);
+        return customer?.addresses.find(a => a.id === selectedAddressId);
+    }, [selectedCustomerId, selectedAddressId, customers]);
 
     // Resetear al abrir
     useEffect(() => {
@@ -59,8 +79,18 @@ export function CreateOrderDialog({
             setCart([]);
             setPaymentMethod(PM.CASH);
             setDeliveryMethod(DM.PICKUP);
+            setSelectedCustomerId(undefined);
+            setSelectedAddressId(undefined);
+            setManualAddress('');
+            setShowCustomerAddressDialog(false);
         }
     }, [open]);
+
+    // Resetear dirección si cambia el cliente o el método de entrega
+    useEffect(() => {
+        setSelectedAddressId(undefined);
+        setManualAddress('');
+    }, [deliveryMethod]);
 
     const addToCart = (type: 'product' | 'combo', id: number, name: string, price: number) => {
         const existing = cart.find(item => item.type === type && item.id === id);
@@ -93,7 +123,16 @@ export function CreateOrderDialog({
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     const handleSubmit = async () => {
-        if (cart.length === 0) return;
+        if (cart.length === 0) {
+            toast.error('Agrega al menos un producto al carrito');
+            return;
+        }
+
+        // Validar dirección si es delivery
+        if (deliveryMethod === DM.DELIVERY && !selectedAddressId && !manualAddress) {
+            toast.error('Selecciona una dirección o ingresa una dirección manual');
+            return;
+        }
 
         const items: OrderItemRequest[] = cart.map(item => {
             const orderItem: any = {
@@ -112,7 +151,10 @@ export function CreateOrderDialog({
         const request: CreateOrderRequest = {
             deliveryMethod,
             paymentMethod,
-            items
+            items,
+            customerId: selectedCustomerId,
+            addressId: deliveryMethod === DM.DELIVERY ? selectedAddressId : undefined,
+            manualAddress: deliveryMethod === DM.DELIVERY && manualAddress ? manualAddress : undefined
         };
 
         console.log('Enviando request:', JSON.stringify(request, null, 2));
@@ -129,15 +171,15 @@ export function CreateOrderDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="bg-white max-w-3xl max-h-[90vh] flex flex-col">
+            <DialogContent className="bg-white max-w-[1100px] w-[1000px] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>Nuevo Pedido</DialogTitle>
                 </DialogHeader>
 
-                <div className="grid grid-cols-2 gap-4 flex-1 overflow-hidden">
+                <div className="grid grid-cols-2 gap-6 flex-1 overflow-hidden">
                     {/* Columna izquierda: Productos y combos */}
-                    <ScrollArea className="h-[500px] pr-4">
-                        <div className="space-y-4">
+                    <ScrollArea className="h-[620px] pr-4">
+                        <div className="grid grid-cols-2 gap-4">
                             {/* Productos */}
                             <div>
                                 <h4 className="font-semibold text-sm mb-2">Productos</h4>
@@ -252,32 +294,89 @@ export function CreateOrderDialog({
 
                         {/* Opciones */}
                         <div className="space-y-3">
-                            <div className="grid gap-1.5">
-                                <Label className="text-sm">Método de Pago</Label>
-                                <Select value={paymentMethod} onValueChange={(val) => setPaymentMethod(val as PaymentMethod)}>
-                                    <SelectTrigger className="h-10 bg-[#F2EDE4] border-[#E5D9D1] focus:border-[#F24452] focus:ring-0 overflow-hidden text-ellipsis whitespace-nowrap">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-[#F2EDE4] border border-[#E5D9D1] shadow-lg max-h-[260px]">
-                                        <SelectItem value={PM.CASH}>Efectivo</SelectItem>
-                                        <SelectItem value={PM.CARD}>Tarjeta</SelectItem>
-                                        <SelectItem value={PM.TRANSFER}>Transferencia</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="grid gap-1.5">
+                                    <Label className="text-sm">Método de Pago</Label>
+                                    <Select value={paymentMethod} onValueChange={(val) => setPaymentMethod(val as PaymentMethod)}>
+                                        <SelectTrigger className="h-10 bg-[#F2EDE4] border-[#E5D9D1] focus:border-[#F24452] focus:ring-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[#F2EDE4] border border-[#E5D9D1] shadow-lg max-h-[260px]">
+                                            <SelectItem value={PM.CASH}>Efectivo</SelectItem>
+                                            <SelectItem value={PM.CARD}>Tarjeta</SelectItem>
+                                            <SelectItem value={PM.TRANSFER}>Transferencia</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="grid gap-1.5">
+                                    <Label className="text-sm">Método de Entrega</Label>
+                                    <Select value={deliveryMethod} onValueChange={(val) => setDeliveryMethod(val as DeliveryMethod)}>
+                                        <SelectTrigger className="h-10 bg-[#F2EDE4] border-[#E5D9D1] focus:border-[#F24452] focus:ring-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[#F2EDE4] border border-[#E5D9D1] shadow-lg max-h-[260px]">
+                                            <SelectItem value={DM.PICKUP}>Retiro</SelectItem>
+                                            <SelectItem value={DM.DELIVERY}>Delivery</SelectItem>
+                                            <SelectItem value={DM.DINE_IN}>Salón</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
 
-                            <div className="grid gap-1.5">
-                                <Label className="text-sm">Método de Entrega</Label>
-                                <Select value={deliveryMethod} onValueChange={(val) => setDeliveryMethod(val as DeliveryMethod)}>
-                                    <SelectTrigger className="h-10 bg-[#F2EDE4] border-[#E5D9D1] focus:border-[#F24452] focus:ring-0 overflow-hidden text-ellipsis whitespace-nowrap">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-[#F2EDE4] border border-[#E5D9D1] shadow-lg max-h-[260px]">
-                                        <SelectItem value={DM.PICKUP}>Retiro</SelectItem>
-                                        <SelectItem value={DM.DELIVERY}>Delivery</SelectItem>
-                                        <SelectItem value={DM.DINE_IN}>Salón</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            {/* Cliente y Dirección (al final) */}
+                            <div className="border-2 border-[#E5D9D1] rounded-lg p-3 space-y-2 bg-[#F2EDE4]/30">
+                                <div className="flex items-center justify-between">
+                                    <Label className="text-sm font-semibold">
+                                        Cliente {deliveryMethod === DM.DELIVERY && '& Dirección'}
+                                    </Label>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        onClick={() => setShowCustomerAddressDialog(true)}
+                                        className="bg-[#F24452] hover:bg-[#d93a48] cursor-pointer h-8"
+                                    >
+                                        <User className="w-4 h-4 mr-1" />
+                                        {selectedCustomerId || manualAddress ? 'Cambiar' : 'Seleccionar'}
+                                    </Button>
+                                </div>
+
+                                {/* Información seleccionada */}
+                                {selectedCustomerId ? (
+                                    <div className="bg-white p-2 rounded border">
+                                        <div className="flex items-center justify-between">
+                                            <div className="text-sm font-medium">
+                                                {customers.find(c => c.id === selectedCustomerId)?.name}
+                                            </div>
+                                            <span className="text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-700 border border-green-200">Seleccionado</span>
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                            {customers.find(c => c.id === selectedCustomerId)?.phone}
+                                        </div>
+                                        {deliveryMethod === DM.DELIVERY && selectedAddress && (
+                                            <div className="text-xs text-gray-700 mt-1 pt-1 border-t">
+                                                📍 {selectedAddress.street} {selectedAddress.number}
+                                                {selectedAddress.description && ` - ${selectedAddress.description}`}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : manualAddress ? (
+                                    <div className="bg-white p-2 rounded border">
+                                        <div className="flex items-center justify-between">
+                                            <div className="text-sm text-gray-600">Sin cliente asociado</div>
+                                            <span className="text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-700 border border-green-200">Seleccionado</span>
+                                        </div>
+                                        <div className="text-xs text-gray-700 mt-1">
+                                            📍 {manualAddress}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-sm text-gray-500 italic p-2">
+                                        {deliveryMethod === DM.DELIVERY 
+                                            ? 'No hay cliente ni dirección seleccionados' 
+                                            : 'No hay cliente seleccionado'}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Total */}
@@ -292,17 +391,35 @@ export function CreateOrderDialog({
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting} className="cursor-pointer">
                         Cancelar
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={cart.length === 0 || isSubmitting}
-                        className="bg-[#F24452] hover:bg-[#F23D3D]"
+                        className="bg-[#F24452] hover:bg-[#F23D3D] cursor-pointer"
                     >
                         {isSubmitting ? 'Creando...' : 'Crear Pedido'}
                     </Button>
                 </DialogFooter>
+
+                            {/* Dialog para seleccionar cliente y dirección */}
+                            <CustomerAddressSelector
+                                open={showCustomerAddressDialog}
+                                onOpenChange={setShowCustomerAddressDialog}
+                                customers={customers}
+                                businessId={businessId}
+                                isDelivery={deliveryMethod === DM.DELIVERY}
+                                initialCustomerId={selectedCustomerId}
+                                initialAddressId={selectedAddressId}
+                                initialManualAddress={manualAddress}
+                                onConfirm={(data) => {
+                                    setSelectedCustomerId(data.customerId);
+                                    setSelectedAddressId(data.addressId);
+                                    setManualAddress(data.manualAddress || '');
+                                }}
+                                onCustomersChanged={onCustomersChanged}
+                            />
             </DialogContent>
         </Dialog>
     );

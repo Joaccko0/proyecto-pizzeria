@@ -10,6 +10,7 @@ import { useBusiness } from '../context/BusinessContext';
 import { useOrders } from '../hooks/useOrders';
 import { useProducts } from '../hooks/useProducts';
 import { useCombos } from '../hooks/useCombos';
+import { useCustomers } from '../hooks/useCustomers';
 import { KanbanBoard } from '../components/KanbanBoard';
 import { OrderDetailsDialog } from '../components/OrderDetailsDialog';
 import { CreateOrderDialog } from '../components/CreateOrderDialog';
@@ -32,6 +33,7 @@ export default function OrdersPage() {
 
     const { products } = useProducts(currentBusiness?.id || -1);
     const { combos } = useCombos(currentBusiness?.id || -1);
+    const { customers, loadCustomers } = useCustomers(currentBusiness?.id || null);
 
     const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
     const [showDetails, setShowDetails] = useState(false);
@@ -143,6 +145,9 @@ export default function OrdersPage() {
                 onSubmit={createOrder}
                 products={products}
                 combos={combos}
+                customers={customers}
+                businessId={currentBusiness?.id || 0}
+                onCustomersChanged={loadCustomers}
             />
         </div>
     );

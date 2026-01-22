@@ -49,6 +49,8 @@ export interface OrderResponse {
     id: number;
     customerId: number | null;
     customerName: string | null;
+    addressId: number | null;
+    deliveryAddress: string | null;
     orderStatus: OrderStatus;
     paymentStatus: PaymentStatus;
     paymentMethod: PaymentMethod;
@@ -68,6 +70,8 @@ export interface OrderItemRequest {
 // Request para crear una orden
 export interface CreateOrderRequest {
     customerId?: number;
+    addressId?: number;
+    manualAddress?: string;
     deliveryMethod: DeliveryMethod;
     paymentMethod: PaymentMethod;
     paymentStatus?: PaymentStatus;
