@@ -41,6 +41,141 @@
 - Selector de cliente/dirección:
   - Permite alternar lista y formulario de alta tanto para cliente como para dirección; al crear vuelve a la lista con la nueva opción seleccionada.
 
+## Expenses & Inventory (Finanzas / Gestión de Gastos)
+
+### Modelo de datos
+Estructura de 4 entidades principales:
+
+1. **Supplier** (Proveedor) - [backend/src/main/java/com/pizzeria/backend/model/Supplier.java](backend/src/main/java/com/pizzeria/backend/model/Supplier.java)
+   - `id`, `businessId`, `createdAt`, `updatedAt` (heredado de `BaseEntity`)
+   - `name`: Nombre del proveedor (ej: "Distribuidor X", "Telecom Y")
+   - `contactInfo`: Información de contacto (teléfono, email, dirección)
+   - Multi-tenant: cada negocio tiene sus propios proveedores
+
+2. **Supply** (Insumo/Partida de Gasto) - [backend/src/main/java/com/pizzeria/backend/model/Supply.java](backend/src/main/java/com/pizzeria/backend/model/Supply.java)
+   - `id`, `businessId`, `createdAt`, `updatedAt` (heredado de `BaseEntity`)
+   - `name`: Nombre del insumo (ej: "Harina", "Internet", "Alquiler")
+   - `category`: Enum `SupplyCategory` con valores:
+     - `STOCK`: Insumos de producción (Harina, Queso, Tomate)
+     - `SERVICE`: Servicios recurrentes (Internet, Gas, Teléfono)
+     - `FIXED_COST`: Gastos fijos (Alquiler, Seguros)
+   - Multi-tenant: cada negocio tiene sus propios insumos
+
+3. **Expense** (Gasto/Expensa) - [backend/src/main/java/com/pizzeria/backend/model/Expense.java](backend/src/main/java/com/pizzeria/backend/model/Expense.java)
+   - `id`, `businessId`, `createdAt`, `updatedAt` (heredado de `BaseEntity`)
+   - `supplierId` (FK a Supplier, **Nullable**): Referencia al proveedor
+     - Nullable para gastos sin proveedor externo (ej: Sueldos, gastos internos)
+   - `date`: Fecha del gasto/factura
+   - `total`: Total del gasto (BigDecimal con precision 10,2)
+   - `items`: Colección de `ExpenseItem` (CascadeType.ALL, orphanRemoval=true)
+   - Multi-tenant: cada negocio tiene sus propios gastos
+
+4. **ExpenseItem** (Línea de Gasto) - [backend/src/main/java/com/pizzeria/backend/model/ExpenseItem.java](backend/src/main/java/com/pizzeria/backend/model/ExpenseItem.java)
+   - `id`: PK simple (no hereda de BaseEntity, es tabla subordinada)
+   - `expenseId` (FK a Expense, NOT NULL): Referencia al gasto padre
+   - `supplyId` (FK a Supply, NOT NULL): Referencia al insumo/partida
+   - `quantity`: Cantidad (Integer)
+   - `unitPrice`: Precio unitario (BigDecimal con precision 10,2)
+   - `subtotal`: Subtotal = quantity * unitPrice (BigDecimal con precision 10,2)
+
+### DTOs y Mappers
+
+**Supplier**:
+- [backend/src/main/java/com/pizzeria/backend/dto/supplier/SupplierRequest.java](backend/src/main/java/com/pizzeria/backend/dto/supplier/SupplierRequest.java): Record con validación @NotBlank en name
+- [backend/src/main/java/com/pizzeria/backend/dto/supplier/SupplierResponse.java](backend/src/main/java/com/pizzeria/backend/dto/supplier/SupplierResponse.java): Record con id, name, contactInfo
+- [backend/src/main/java/com/pizzeria/backend/mapper/SupplierMapper.java](backend/src/main/java/com/pizzeria/backend/mapper/SupplierMapper.java): MapStruct mapper con métodos toResponse, toEntity, updateEntityFromRequest
+
+**Supply**:
+- [backend/src/main/java/com/pizzeria/backend/dto/supply/SupplyRequest.java](backend/src/main/java/com/pizzeria/backend/dto/supply/SupplyRequest.java): Record con @NotBlank name y @NotNull category
+- [backend/src/main/java/com/pizzeria/backend/dto/supply/SupplyResponse.java](backend/src/main/java/com/pizzeria/backend/dto/supply/SupplyResponse.java): Record con id, name, category
+- [backend/src/main/java/com/pizzeria/backend/mapper/SupplyMapper.java](backend/src/main/java/com/pizzeria/backend/mapper/SupplyMapper.java): MapStruct mapper
+
+**Expense**:
+- [backend/src/main/java/com/pizzeria/backend/dto/expense/ExpenseRequest.java](backend/src/main/java/com/pizzeria/backend/dto/expense/ExpenseRequest.java): Record con supplierId (nullable), @NotNull date, @NotEmpty items
+- [backend/src/main/java/com/pizzeria/backend/dto/expense/ExpenseResponse.java](backend/src/main/java/com/pizzeria/backend/dto/expense/ExpenseResponse.java): Record con id, supplierId, supplierName, date, total (calculado), items
+- [backend/src/main/java/com/pizzeria/backend/mapper/ExpenseMapper.java](backend/src/main/java/com/pizzeria/backend/mapper/ExpenseMapper.java): MapStruct mapper (items y supplier se mapean manualmente en Service)
+
+**ExpenseItem**:
+- [backend/src/main/java/com/pizzeria/backend/dto/expense/ExpenseItemRequest.java](backend/src/main/java/com/pizzeria/backend/dto/expense/ExpenseItemRequest.java): Record anidado en ExpenseRequest con supplyId, @Positive quantity, @Positive unitPrice
+- [backend/src/main/java/com/pizzeria/backend/dto/expense/ExpenseItemResponse.java](backend/src/main/java/com/pizzeria/backend/dto/expense/ExpenseItemResponse.java): Record con id, supplyId, supplyName, quantity, unitPrice, subtotal
+- [backend/src/main/java/com/pizzeria/backend/mapper/ExpenseItemMapper.java](backend/src/main/java/com/pizzeria/backend/mapper/ExpenseItemMapper.java): Mapper con método default toResponse (mapeo manual de supplyName)
+
+### Servicios
+
+1. **SupplierService** - [backend/src/main/java/com/pizzeria/backend/service/SupplierService.java](backend/src/main/java/com/pizzeria/backend/service/SupplierService.java)
+   - Métodos CRUD: create, getAll, getById, update, delete
+   - Método de búsqueda: searchSuppliersByName (por nombre, case-insensitive)
+   - Control multi-tenant en todos los métodos
+
+2. **SupplyService** - [backend/src/main/java/com/pizzeria/backend/service/SupplyService.java](backend/src/main/java/com/pizzeria/backend/service/SupplyService.java)
+   - Métodos CRUD: create, getAll, getById, update, delete
+   - Filtrado: getSuppliesByCategory (filtra por STOCK/SERVICE/FIXED_COST)
+   - Búsqueda: searchSuppliesByName (por nombre, case-insensitive)
+   - Control multi-tenant en todos los métodos
+
+3. **ExpenseService** - [backend/src/main/java/com/pizzeria/backend/service/ExpenseService.java](backend/src/main/java/com/pizzeria/backend/service/ExpenseService.java)
+   - Métodos CRUD: create, getAll, getById, update, delete
+   - **Lógica especial en create/update**:
+     - Valida que existan los Supplies referenciados en items
+     - Calcula subtotal de cada item: quantity * unitPrice
+     - Calcula total del gasto: suma de todos los subtotales
+     - Maneja cascada de items (orphanRemoval)
+   - Métodos especiales:
+     - getExpensesByDateRange: rango de fechas (startDate a endDate inclusive)
+     - getExpensesBySupplier: filtro por proveedor
+   - Todos con validación multi-tenant
+
+### Repositories
+
+- [backend/src/main/java/com/pizzeria/backend/repository/SupplierRepository.java](backend/src/main/java/com/pizzeria/backend/repository/SupplierRepository.java): findByBusinessId, findByIdAndBusinessId, findByBusinessIdAndNameContainingIgnoreCase
+- [backend/src/main/java/com/pizzeria/backend/repository/SupplyRepository.java](backend/src/main/java/com/pizzeria/backend/repository/SupplyRepository.java): findByBusinessId, findByIdAndBusinessId, findByBusinessIdAndCategory, findByBusinessIdAndNameContainingIgnoreCase
+- [backend/src/main/java/com/pizzeria/backend/repository/ExpenseRepository.java](backend/src/main/java/com/pizzeria/backend/repository/ExpenseRepository.java): findByBusinessId, findByIdAndBusinessId, findByBusinessIdAndDateBetween, findByBusinessIdAndSupplierId, findByBusinessIdWithItems (custom query con LEFT JOIN FETCH para evitar N+1)
+- [backend/src/main/java/com/pizzeria/backend/repository/ExpenseItemRepository.java](backend/src/main/java/com/pizzeria/backend/repository/ExpenseItemRepository.java): findByExpenseId, findBySupplyId
+
+### Controllers
+
+1. **SupplierController** - [backend/src/main/java/com/pizzeria/backend/controller/SupplierController.java](backend/src/main/java/com/pizzeria/backend/controller/SupplierController.java)
+   - Base: `/api/suppliers`
+   - Endpoints:
+     - POST `/api/suppliers?businessId={id}` - Crear
+     - GET `/api/suppliers?businessId={id}` - Listar todos
+     - GET `/api/suppliers/{id}?businessId={id}` - Obtener uno
+     - PUT `/api/suppliers/{id}?businessId={id}` - Editar
+     - DELETE `/api/suppliers/{id}?businessId={id}` - Borrar
+     - GET `/api/suppliers/search?businessId={id}&name={query}` - Buscar por nombre
+
+2. **SupplyController** - [backend/src/main/java/com/pizzeria/backend/controller/SupplyController.java](backend/src/main/java/com/pizzeria/backend/controller/SupplyController.java)
+   - Base: `/api/supplies`
+   - Endpoints:
+     - POST `/api/supplies?businessId={id}` - Crear
+     - GET `/api/supplies?businessId={id}` - Listar todos
+     - GET `/api/supplies/{id}?businessId={id}` - Obtener uno
+     - PUT `/api/supplies/{id}?businessId={id}` - Editar
+     - DELETE `/api/supplies/{id}?businessId={id}` - Borrar
+     - GET `/api/supplies/category/{category}?businessId={id}` - Filtrar por categoría
+     - GET `/api/supplies/search?businessId={id}&name={query}` - Buscar por nombre
+
+3. **ExpenseController** - [backend/src/main/java/com/pizzeria/backend/controller/ExpenseController.java](backend/src/main/java/com/pizzeria/backend/controller/ExpenseController.java)
+   - Base: `/api/expenses`
+   - Endpoints:
+     - POST `/api/expenses?businessId={id}` - Crear con items (calcula total automáticamente)
+     - GET `/api/expenses?businessId={id}` - Listar todos
+     - GET `/api/expenses/{id}?businessId={id}` - Obtener uno con items
+     - PUT `/api/expenses/{id}?businessId={id}` - Editar (reemplaza items)
+     - DELETE `/api/expenses/{id}?businessId={id}` - Borrar (en cascada con items)
+     - GET `/api/expenses/date-range?businessId={id}&startDate={date}&endDate={date}` - Filtrar por rango
+     - GET `/api/expenses/supplier/{supplierId}?businessId={id}` - Filtrar por proveedor
+
+### Patrones y convenciones seguidas
+
+- **Multi-tenant**: Todos los servicios validan `businessId` para control de acceso
+- **DTOs y Mappers**: Separación clara entre entidades JPA y DTOs de transporte
+- **Validaciones**: Anotaciones @Valid, @NotNull, @NotBlank, @Positive en DTOs
+- **Transacciones**: @Transactional en servicios, con readOnly=true para queries
+- **Cálculos**: El backend calcula subtotales y totales automáticamente (no confiar en el Front)
+- **Relaciones**: CascadeType.ALL + orphanRemoval para integridad referencial en items
+- **Comentarios**: Javadoc extenso en servicios y lógica compleja para facilitar mantenimiento
+
 ## Notas de diseño/UI
 - El diálogo base en [frontend/src/components/ui/dialog.tsx](frontend/src/components/ui/dialog.tsx) ya no limita `sm:max-w-lg`; el ancho lo fijan las clases del consumidor (p. ej., `CreateOrderDialog`).
 - Colores frecuentes: fondos beige `#F2EDE4`, bordes `#E5D9D1`, primario `#F24452` para CTAs.
@@ -61,3 +196,7 @@
 - Mantener consistencia de colores y anchos en modales; el ancho depende de las clases pasadas a `DialogContent`.
 - Si cambias comportamientos de selección (cliente/dirección), alinear con `CustomerAddressSelector` para no romper el flujo de creación de pedidos.
 - Evita sobreescribir estilos base de shadcn en `ui/` salvo necesidad puntual (ya se eliminó el límite de `max-w` del dialog).
+- Para Expenses & Inventory: el backend calcula automáticamente subtotales y totales. El Front **NO debe** hacer estos cálculos; confía en lo que retorna el API.
+- Al crear un Expense, los items se reemplazan completamente (no es merge). Si el usuario edita un gasto, envía todos los items que desea (nuevos, modificados o que se mantienen).
+- Los Suppliers pueden usarse en múltiples Expenses. Los Supplies también. No implementar borrado lógico aún, pero tenerlo en cuenta para futuras iteraciones si hay restricciones de integridad.
+- Usar `businessId` como query param en todos los endpoints (eventual migración a JWT token con extracción automática en futuro).
