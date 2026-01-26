@@ -7,6 +7,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 import OrdersPage from './pages/OrdersPage';
 import ProductsPage from './pages/ProductsPage';
 import CustomersPage from './pages/CustomersPage';
+import ExpensesPage from './pages/ExpensesPage';
 import { Toaster } from "@/components/ui/sonner";
 
 // Componente que protege rutas: solo deja pasar si isAuthenticated es true
@@ -44,8 +45,8 @@ function App() {
                                 <Route index element={<OrdersPage />} />
                                 
                                 <Route path="products" element={<ProductsPage />} />
-                                <Route path="orders" element={<OrdersPage />} />
                                 <Route path="customers" element={<CustomersPage />} />
+                                <Route path="expenses" element={<ExpensesPage />} />
                                 
                         </Route>
                         

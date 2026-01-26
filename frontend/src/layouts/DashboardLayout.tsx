@@ -9,7 +9,9 @@ import {
     ShoppingBag, 
     LogOut, 
     Menu, 
-    X 
+    X,
+    DollarSign,
+    Building2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -23,8 +25,8 @@ export default function DashboardLayout() {
     const menuItems = [
         { label: 'Panel Principal', icon: LayoutDashboard, path: '/dashboard' },
         { label: 'Productos', icon: Pizza, path: '/dashboard/products' },
-        { label: 'Pedidos', icon: ShoppingBag, path: '/dashboard/orders' },
         { label: 'Clientes', icon: Users, path: '/dashboard/customers' },
+        { label: 'Gastos', icon: DollarSign, path: '/dashboard/expenses' },
     ];
 
     return (
