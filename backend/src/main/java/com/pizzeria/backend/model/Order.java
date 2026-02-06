@@ -33,6 +33,11 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "customer_id") // Nullable (Cliente anónimo)
     private Customer customer;
 
+    // Referencia a la caja (CashShift) con la que se creó este pedido
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cash_shift_id", nullable = false)
+    private CashShift cashShift;
+
     // Dirección de entrega (solo para DELIVERY)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id")

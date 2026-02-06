@@ -5,6 +5,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardLayout from './layouts/DashboardLayout';
 import OrdersPage from './pages/OrdersPage';
+import OrdersHistoryPage from './pages/OrdersHistoryPage';
+import StatsPage from './pages/StatsPage';
 import ProductsPage from './pages/ProductsPage';
 import CustomersPage from './pages/CustomersPage';
 import ExpensesPage from './pages/ExpensesPage';
@@ -43,6 +45,8 @@ function App() {
                             >
                                 {/* Rutas Hijas (se renderizan en <Outlet />) */}
                                 <Route index element={<OrdersPage />} />
+                                <Route path="history" element={<OrdersHistoryPage />} />
+                                <Route path="stats" element={<StatsPage />} />
                                 
                                 <Route path="products" element={<ProductsPage />} />
                                 <Route path="customers" element={<CustomersPage />} />
@@ -55,7 +59,7 @@ function App() {
                     </Routes>
                     
                     {/* Sistema de notificaciones global */}
-                    <Toaster position="top-right" richColors />
+                    <Toaster position="bottom-right" richColors />
                 </BusinessProvider>
             </AuthProvider>
         </BrowserRouter>

@@ -42,6 +42,16 @@ export function OrderCard({ order, onClick, isDragging }: OrderCardProps) {
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
+                    {/* ESTADO DE PAGO - MUY VISIBLE */}
+                    {order.paymentStatus === 'PAID' ? (
+                        <Badge className="text-[11px] py-1 px-2 bg-green-500 text-white border-0 font-semibold">
+                            ✓ PAGADO
+                        </Badge>
+                    ) : (
+                        <Badge className="text-[11px] py-1 px-2 bg-red-500 text-white border-0 font-semibold">
+                            ⚠ NO PAGADO
+                        </Badge>
+                    )}
                     <Badge variant="secondary" className="text-[10px] py-0.5 px-2">
                         {DeliveryMethodLabels[order.deliveryMethod]}
                     </Badge>
@@ -54,17 +64,9 @@ export function OrderCard({ order, onClick, isDragging }: OrderCardProps) {
 
             {/* Cliente */}
             {order.customerName && (
-                <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1 text-xs text-[#262626] truncate">
-                        <User className="w-3 h-3 text-gray-600" />
-                        <span className="font-medium">{order.customerName}</span>
-                    </div>
-                    {/* Estado de pago */}
-                    {order.paymentStatus !== 'PAID' && (
-                        <Badge variant="outline" className="text-[10px] py-0.5 px-2 border-amber-300 text-amber-700 bg-amber-50">
-                            {PaymentStatusLabels[order.paymentStatus]}
-                        </Badge>
-                    )}
+                <div className="flex items-center gap-1 mb-2 text-xs text-[#262626] truncate">
+                    <User className="w-3 h-3 text-gray-600" />
+                    <span className="font-medium">{order.customerName}</span>
                 </div>
             )}
 

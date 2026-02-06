@@ -46,6 +46,13 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getAllOrders(businessId));
     }
 
+    @GetMapping("/historic")
+    public ResponseEntity<List<OrderResponse>> getAllHistoric(
+            @RequestParam Long businessId
+    ) {
+        return ResponseEntity.ok(orderService.getAllOrdersHistoric(businessId));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<OrderResponse> updateStatus(
             @PathVariable Long id,

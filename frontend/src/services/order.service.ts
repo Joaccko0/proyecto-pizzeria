@@ -8,10 +8,20 @@ import type { OrderResponse, CreateOrderRequest, OrderStatus } from '../types/or
 
 export const OrderService = {
     /**
-     * Obtener todas las órdenes de un negocio
+     * Obtener todas las órdenes de la caja abierta actual
      */
     async getOrders(businessId: number): Promise<OrderResponse[]> {
         const response = await apiClient.get<OrderResponse[]>('/orders', {
+            params: { businessId }
+        });
+        return response.data;
+    },
+
+    /**
+     * Obtener el historial completo de órdenes (todas las cajas)
+     */
+    async getOrdersHistoric(businessId: number): Promise<OrderResponse[]> {
+        const response = await apiClient.get<OrderResponse[]>('/orders/historic', {
             params: { businessId }
         });
         return response.data;

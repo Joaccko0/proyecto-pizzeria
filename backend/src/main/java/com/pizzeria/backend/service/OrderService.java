@@ -39,6 +39,7 @@ public class OrderService {
     private final ComboRepository comboRepository;
     private final CustomerRepository customerRepository;
     private final AddressRepository addressRepository;
+    private final CashShiftService cashShiftService;
     private final OrderMapper orderMapper;
 
     @Transactional
@@ -49,9 +50,13 @@ public class OrderService {
                                    ? request.paymentStatus() 
                                    : PaymentStatus.PENDING;
         
+        // 0. VALIDAR QUE HAYA CAJA ABIERTA (CRITICO)
+        var cashShift = cashShiftService.getOpenCashShift(businessId);
+        
         // 1. Inicializar Pedido
         Order order = Order.builder()
                 .businessId(businessId)
+                .cashShift(cashShift)
                 .orderStatus(OrderStatus.PENDING)
                 .paymentStatus(statusPago)
                 .paymentMethod(request.paymentMethod())
@@ -142,6 +147,25 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getAllOrders(Long businessId) {
+        // Intentar obtener la caja abierta
+        try {
+            var cashShift = cashShiftService.getOpenCashShift(businessId);
+            // Si hay caja abierta, retornar los pedidos de esa caja
+            return orderRepository.findByBusinessIdAndCashShiftOrderByCreatedAtDesc(businessId, cashShift).stream()
+                    .map(orderMapper::toResponse)
+                    .toList();
+        } catch (jakarta.persistence.EntityNotFoundException e) {
+            // Si no hay caja abierta, retornar lista vacía
+            return java.util.Collections.emptyList();
+        }
+    }
+
+    /**
+     * Obtiene todos los pedidos de un negocio (sin filtro de caja)
+     * Útil para reportes históricos
+     */
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getAllOrdersHistoric(Long businessId) {
         return orderRepository.findByBusinessIdOrderByCreatedAtDesc(businessId).stream()
                 .map(orderMapper::toResponse)
                 .toList();

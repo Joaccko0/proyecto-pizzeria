@@ -1,6 +1,7 @@
 /**
  * Página principal de gestión de órdenes (Pedidos)
  * Tablero Kanban con drag & drop
+ * Requiere caja abierta para crear/gestionar pedidos
  */
 
 import { useState } from 'react';
@@ -11,9 +12,13 @@ import { useOrders } from '../hooks/useOrders';
 import { useProducts } from '../hooks/useProducts';
 import { useCombos } from '../hooks/useCombos';
 import { useCustomers } from '../hooks/useCustomers';
+import { useCashShift } from '../hooks/useCashShift';
 import { KanbanBoard } from '../components/KanbanBoard';
 import { OrderDetailsDialog } from '../components/OrderDetailsDialog';
 import { CreateOrderDialog } from '../components/CreateOrderDialog';
+import { CashShiftStatus } from '../components/CashShiftStatus';
+import { OpenCashDialog } from '../components/OpenCashDialog';
+import { CloseCashDialog } from '../components/CloseCashDialog';
 import type { OrderResponse, OrderStatus } from '../types/order.types';
 
 /**
@@ -35,6 +40,11 @@ export default function OrdersPage() {
     const { combos } = useCombos(currentBusiness?.id || -1);
     const { customers, loadCustomers } = useCustomers(currentBusiness?.id || null);
 
+    // Gestión de CashShift
+    const { openCashShift, loading: cashLoading, openCash, closeCash } = useCashShift();
+    const [showOpenCashDialog, setShowOpenCashDialog] = useState(false);
+    const [showCloseCashDialog, setShowCloseCashDialog] = useState(false);
+
     const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
     const [showDetails, setShowDetails] = useState(false);
     const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -51,6 +61,14 @@ export default function OrdersPage() {
     const handleCancelOrder = async (orderId: number) => {
         await cancelOrder(orderId);
         setShowDetails(false);
+    };
+
+    // Manejador para crear orden (validar que hay caja abierta)
+    const handleCreateOrder = async (data: any) => {
+        if (!openCashShift) {
+            return false;
+        }
+        return createOrder(data);
     };
 
     return (
@@ -81,7 +99,8 @@ export default function OrdersPage() {
                         <Button
                             size="sm"
                             onClick={() => setShowCreateDialog(true)}
-                            className="bg-[#F24452] hover:bg-[#F23D3D]"
+                            disabled={!openCashShift}
+                            className="bg-[#F24452] hover:bg-[#F23D3D] disabled:opacity-50"
                         >
                             <Plus className="w-4 h-4 mr-2" />
                             Nuevo Pedido
@@ -89,45 +108,56 @@ export default function OrdersPage() {
                     </div>
                 </div>
 
-                {/* Estadísticas rápidas */}
-                <div className="grid grid-cols-4 gap-4">
-                    <StatCard
-                        title="Pendientes"
-                        count={orders.filter(o => o.orderStatus === 'PENDING').length}
-                        color="bg-amber-500"
-                    />
-                    <StatCard
-                        title="En Preparación"
-                        count={orders.filter(o => o.orderStatus === 'PREPARING').length}
-                        color="bg-blue-500"
-                    />
-                    <StatCard
-                        title="Listos"
-                        count={orders.filter(o => o.orderStatus === 'READY').length}
-                        color="bg-green-500"
-                    />
-                    <StatCard
-                        title="Entregados"
-                        count={orders.filter(o => o.orderStatus === 'DELIVERED').length}
-                        color="bg-gray-500"
-                    />
-                </div>
+                {/* Estado de Caja */}
+                <CashShiftStatus
+                    cashShift={openCashShift}
+                    onOpenClick={() => setShowOpenCashDialog(true)}
+                    onCloseClick={() => setShowCloseCashDialog(true)}
+                    loading={cashLoading}
+                />
+                {/* Estadísticas rápidas (solo mostrar si hay caja abierta) */}
+                {openCashShift && (
+                    <div className="grid grid-cols-4 gap-4">
+                        <StatCard
+                            title="Pendientes"
+                            count={orders.filter(o => o.orderStatus === 'PENDING').length}
+                            color="bg-amber-500"
+                        />
+                        <StatCard
+                            title="En Preparación"
+                            count={orders.filter(o => o.orderStatus === 'PREPARING').length}
+                            color="bg-blue-500"
+                        />
+                        <StatCard
+                            title="Listos"
+                            count={orders.filter(o => o.orderStatus === 'READY').length}
+                            color="bg-green-500"
+                        />
+                        <StatCard
+                            title="Entregados"
+                            count={orders.filter(o => o.orderStatus === 'DELIVERED').length}
+                            color="bg-gray-500"
+                        />
+                    </div>
+                )}
 
                 {/* Tablero Kanban */}
-                {loading && orders.length === 0 ? (
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-center">
-                            <RefreshCw className="w-8 h-8 animate-spin text-[#F24452] mx-auto mb-2" />
-                            <p className="text-sm text-gray-500">Cargando pedidos...</p>
+                {openCashShift ? (
+                    loading && orders.length === 0 ? (
+                        <div className="flex items-center justify-center h-64">
+                            <div className="text-center">
+                                <RefreshCw className="w-8 h-8 animate-spin text-[#F24452] mx-auto mb-2" />
+                                <p className="text-sm text-gray-500">Cargando pedidos...</p>
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    <KanbanBoard
-                        orders={orders}
-                        onOrderClick={handleOrderClick}
-                        onStatusChange={handleStatusChange}
-                    />
-                )}
+                    ) : (
+                        <KanbanBoard
+                            orders={orders}
+                            onOrderClick={handleOrderClick}
+                            onStatusChange={handleStatusChange}
+                        />
+                    )
+                ) : null}
             </div>
 
             {/* Dialogs */}
@@ -142,12 +172,29 @@ export default function OrdersPage() {
             <CreateOrderDialog
                 open={showCreateDialog}
                 onOpenChange={setShowCreateDialog}
-                onSubmit={createOrder}
+                onSubmit={handleCreateOrder}
                 products={products}
                 combos={combos}
                 customers={customers}
                 businessId={currentBusiness?.id || 0}
                 onCustomersChanged={loadCustomers}
+            />
+
+            <OpenCashDialog
+                open={showOpenCashDialog}
+                onOpenChange={setShowOpenCashDialog}
+                onSubmit={openCash}
+                loading={cashLoading}
+            />
+
+            <CloseCashDialog
+                open={showCloseCashDialog}
+                onOpenChange={setShowCloseCashDialog}
+                onSubmit={closeCash}
+                cashShift={openCashShift}
+                orders={orders}
+                onClosed={loadOrders}
+                loading={cashLoading}
             />
         </div>
     );

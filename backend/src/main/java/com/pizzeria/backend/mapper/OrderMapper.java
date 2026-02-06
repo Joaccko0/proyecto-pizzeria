@@ -15,6 +15,7 @@ public interface OrderMapper {
     @Mapping(target = "customerName", source = "customer.name")
     @Mapping(target = "addressId", source = "address.id")
     @Mapping(target = "deliveryAddress", source = "order", qualifiedByName = "formatAddress")
+    @Mapping(target = "cashShiftId", source = "cashShift.id")
     @Mapping(target = "items", source = "items")
     OrderResponse toResponse(Order order);
 

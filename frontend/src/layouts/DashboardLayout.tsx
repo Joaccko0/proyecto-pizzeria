@@ -6,12 +6,12 @@ import {
     LayoutDashboard, 
     Pizza, 
     Users, 
-    ShoppingBag, 
     LogOut, 
     Menu, 
     X,
     DollarSign,
-    Building2
+    History,
+    BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -24,6 +24,8 @@ export default function DashboardLayout() {
     // Definimos las opciones del menú
     const menuItems = [
         { label: 'Panel Principal', icon: LayoutDashboard, path: '/dashboard' },
+        { label: 'Historial de Pedidos', icon: History, path: '/dashboard/history' },
+        { label: 'Estadísticas', icon: BarChart3, path: '/dashboard/stats' },
         { label: 'Productos', icon: Pizza, path: '/dashboard/products' },
         { label: 'Clientes', icon: Users, path: '/dashboard/customers' },
         { label: 'Gastos', icon: DollarSign, path: '/dashboard/expenses' },

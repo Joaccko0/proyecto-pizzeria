@@ -15,6 +15,7 @@ public record OrderResponse(
     String customerName, // Para mostrar rápido en la tabla
     Long addressId,
     String deliveryAddress, // Dirección completa formateada
+    Long cashShiftId, // ID de la caja donde se creó el pedido
     OrderStatus orderStatus,
     PaymentStatus paymentStatus,
     PaymentMethod paymentMethod,

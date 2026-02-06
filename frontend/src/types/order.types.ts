@@ -51,6 +51,7 @@ export interface OrderResponse {
     customerName: string | null;
     addressId: number | null;
     deliveryAddress: string | null;
+    cashShiftId: number | null; // ID de la caja donde se creó el pedido
     orderStatus: OrderStatus;
     paymentStatus: PaymentStatus;
     paymentMethod: PaymentMethod;

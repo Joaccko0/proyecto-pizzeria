@@ -3,7 +3,7 @@
  * Maneja estado, carga de datos y operaciones CRUD
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { OrderService } from '../services/order.service';
 import type { OrderResponse, CreateOrderRequest, OrderStatus, PaymentStatus, PaymentMethod, DeliveryMethod } from '../types/order.types';
@@ -28,17 +28,10 @@ export function useOrders(businessId: number | undefined): UseOrdersReturn {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Cargar órdenes al montar o cambiar businessId
-    useEffect(() => {
-        if (businessId) {
-            loadOrders();
-        }
-    }, [businessId]);
-
     /**
      * Cargar todas las órdenes
      */
-    const loadOrders = async () => {
+    const loadOrders = useCallback(async () => {
         if (!businessId) return;
 
         setLoading(true);
@@ -54,7 +47,17 @@ export function useOrders(businessId: number | undefined): UseOrdersReturn {
         } finally {
             setLoading(false);
         }
-    };
+    }, [businessId]);
+
+    // Cargar órdenes al montar o cambiar businessId
+    useEffect(() => {
+        if (businessId) {
+            loadOrders();
+        } else {
+            // Limpiar órdenes si no hay negocio seleccionado
+            setOrders([]);
+        }
+    }, [businessId, loadOrders]);
 
     /**
      * Crear nueva orden
