@@ -17,8 +17,8 @@ export const CashShiftService = {
             });
             return response.data;
         } catch (error: any) {
-            // 404 significa que no hay caja abierta
-            if (error.response?.status === 404) {
+            // 404 o 204 significa que no hay caja abierta
+            if (error.response?.status === 404 || error.response?.status === 204) {
                 return null;
             }
             throw error;

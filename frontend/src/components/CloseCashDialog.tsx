@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, AlertTriangle } from 'lucide-react';
+import { formatCurrency } from '../lib/utils';
 import type { CashShiftResponse } from '../types/cashshift.types';
 import type { OrderResponse } from '../types/order.types';
 
@@ -182,11 +183,11 @@ export function CloseCashDialog({
                             <CardContent className="space-y-3">
                                 <div className="flex justify-between items-center py-2 border-b">
                                     <span className="text-sm text-gray-600">Monto Inicial:</span>
-                                    <span className="font-semibold">${startAmount.toFixed(2)}</span>
+                                    <span className="font-semibold">{formatCurrency(startAmount)}</span>
                                 </div>
                                 <div className="flex justify-between items-center py-2 border-b">
                                     <span className="text-sm text-gray-600">Ventas (efectivo):</span>
-                                    <span className="font-semibold text-green-600">${salesAmount.toFixed(2)}</span>
+                                    <span className="font-semibold text-green-600">{formatCurrency(salesAmount)}</span>
                                 </div>
                                 
                                 {/* Desglose por método de pago */}
@@ -195,26 +196,26 @@ export function CloseCashDialog({
                                     <div className="space-y-1 pl-2">
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-600">💵 Efectivo:</span>
-                                            <span className="font-medium">${paymentBreakdown.CASH.toFixed(2)}</span>
+                                            <span className="font-medium">{formatCurrency(paymentBreakdown.CASH)}</span>
                                         </div>
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-600">💳 Tarjeta:</span>
-                                            <span className="font-medium">${paymentBreakdown.CARD.toFixed(2)}</span>
+                                            <span className="font-medium">{formatCurrency(paymentBreakdown.CARD)}</span>
                                         </div>
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-600">🏦 Transferencia:</span>
-                                            <span className="font-medium">${paymentBreakdown.TRANSFER.toFixed(2)}</span>
+                                            <span className="font-medium">{formatCurrency(paymentBreakdown.TRANSFER)}</span>
                                         </div>
                                         <div className="flex justify-between text-sm font-semibold pt-1 border-t">
                                             <span className="text-gray-800">Total recaudado:</span>
-                                            <span className="text-green-600">${(paymentBreakdown.CASH + paymentBreakdown.CARD + paymentBreakdown.TRANSFER).toFixed(2)}</span>
+                                            <span className="text-green-600">{formatCurrency(paymentBreakdown.CASH + paymentBreakdown.CARD + paymentBreakdown.TRANSFER)}</span>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div className="flex justify-between items-center py-2 bg-[#F2EDE4] px-3 rounded">
                                     <span className="text-sm font-semibold">Monto Esperado en Caja:</span>
-                                    <span className="font-bold text-lg">${expectedAmount.toFixed(2)}</span>
+                                    <span className="font-bold text-lg">{formatCurrency(expectedAmount)}</span>
                                 </div>
                             </CardContent>
                         </Card>

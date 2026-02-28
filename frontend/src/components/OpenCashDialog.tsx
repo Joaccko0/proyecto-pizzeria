@@ -68,7 +68,7 @@ export function OpenCashDialog({ open, onOpenChange, onSubmit, loading = false }
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="bg-white sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <DollarSign className="w-5 h-5 text-[#F24452]" />

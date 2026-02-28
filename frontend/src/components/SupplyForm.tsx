@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Package, Tag } from 'lucide-react';
 import { SupplyCategory } from '@/types/supply.types';
 import type { Supply } from '@/types/supply.types';
 
@@ -45,7 +46,7 @@ export function SupplyForm({ isOpen, onClose, onSave, supply, defaultCategory }:
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="bg-white sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>
                         {supply ? 'Editar Insumo' : 'Nuevo Insumo'}
@@ -54,7 +55,10 @@ export function SupplyForm({ isOpen, onClose, onSave, supply, defaultCategory }:
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="name">Nombre</Label>
+                            <Label htmlFor="name" className="flex items-center gap-1.5">
+                                <Package className="h-4 w-4 text-[#F24452]" />
+                                Nombre
+                            </Label>
                             <Input
                                 id="name"
                                 value={name}
@@ -64,7 +68,10 @@ export function SupplyForm({ isOpen, onClose, onSave, supply, defaultCategory }:
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="category">Categoría</Label>
+                            <Label htmlFor="category" className="flex items-center gap-1.5">
+                                <Tag className="h-4 w-4 text-[#F24452]" />
+                                Categoría
+                            </Label>
                             <Select value={category} onValueChange={setCategory}>
                                 <SelectTrigger className="h-10 w-full bg-[#F2EDE4] border-[#E5D9D1] focus:border-[#F24452] focus:ring-0 overflow-hidden text-ellipsis whitespace-nowrap">
                                     <SelectValue />

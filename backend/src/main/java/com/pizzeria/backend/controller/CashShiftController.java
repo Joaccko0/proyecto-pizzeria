@@ -74,11 +74,16 @@ public class CashShiftController {
      * GET /api/cash-shifts/open?businessId=1
      */
     @GetMapping("/open")
-    public ResponseEntity<CashShiftResponse> getOpenCashShift(
+    public ResponseEntity<?> getOpenCashShift(
             @RequestParam Long businessId
     ) {
-        CashShift cashShift = cashShiftService.getOpenCashShift(businessId);
-        return ResponseEntity.ok(cashShiftMapper.toResponse(cashShift));
+        try {
+            CashShift cashShift = cashShiftService.getOpenCashShift(businessId);
+            return ResponseEntity.ok(cashShiftMapper.toResponse(cashShift));
+        } catch (jakarta.persistence.EntityNotFoundException ex) {
+            // No hay caja abierta
+            return ResponseEntity.noContent().build();
+        }
     }
 
     /**

@@ -188,6 +188,8 @@ export function CustomerAddressSelector({
 
     // Removed handleClearSelection (unused after tabs refactor)
 
+    const selectedAddressObj = selectedCustomer?.addresses.find(a => a.id === selectedAddressId);
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="bg-white max-w-2xl max-h-[85vh] flex flex-col">
@@ -197,10 +199,47 @@ export function CustomerAddressSelector({
                     </DialogTitle>
                 </DialogHeader>
 
+                {/* Resumen de selección actual */}
+                {isDelivery && (
+                    <div className="bg-[#FFF5F5] border border-[#F24452] rounded-lg p-3 space-y-2">
+                        <div className="flex items-start gap-2">
+                            <span className="text-[#F24452] font-semibold min-w-fit">📍 Tu selección:</span>
+                            <div className="flex-1">
+                                {useManualAddress ? (
+                                    <div className="text-sm">
+                                        <p className="font-medium">Dirección manual:</p>
+                                        <p className="text-gray-700">{manualAddress || '(sin ingresar aún)'}</p>
+                                    </div>
+                                ) : (
+                                    <div className="text-sm space-y-1">
+                                        {selectedCustomer ? (
+                                            <>
+                                                <p className="font-medium">{selectedCustomer.name}</p>
+                                                {selectedAddressObj ? (
+                                                    <p className="text-gray-700">{selectedAddressObj.street} {selectedAddressObj.number}
+                                                        {selectedAddressObj.description && ` - ${selectedAddressObj.description}`}</p>
+                                                ) : (
+                                                    <p className="text-amber-600">⚠️ Sin dirección seleccionada</p>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <p className="text-gray-500">(sin cliente seleccionado)</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex-1 overflow-hidden space-y-4">
                     {/* Opción de dirección manual (solo delivery) */}
                     {isDelivery && (
-                        <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg">
+                        <div className={`flex items-center gap-2 p-3 rounded-lg border-2 transition-all ${
+                            useManualAddress 
+                                ? 'bg-[#F24452]/10 border-[#F24452]' 
+                                : 'bg-amber-50 border-amber-200'
+                        }`}>
                             <input
                                 type="checkbox"
                                 id="useManual"
@@ -214,9 +253,9 @@ export function CustomerAddressSelector({
                                         setManualAddress('');
                                     }
                                 }}
-                                className="cursor-pointer"
+                                className="cursor-pointer w-4 h-4"
                             />
-                            <Label htmlFor="useManual" className="text-sm cursor-pointer">
+                            <Label htmlFor="useManual" className="text-sm cursor-pointer flex-1">
                                 Ingresar dirección manualmente (sin asociar cliente)
                             </Label>
                         </div>
@@ -224,23 +263,37 @@ export function CustomerAddressSelector({
 
                     {useManualAddress ? (
                         /* Dirección manual */
-                        <div className="space-y-2">
-                            <Label>Dirección de Entrega</Label>
+                        <div className="space-y-2 p-3 bg-[#FFF5F5] border-2 border-[#F24452] rounded-lg">
+                            <Label className="font-semibold flex items-center gap-2">
+                                <span className="text-[#F24452]">📍</span>
+                                Dirección de Entrega
+                            </Label>
                             <Input
                                 placeholder="Ej: Av. Corrientes 1234, Piso 2 Depto A"
                                 value={manualAddress}
                                 onChange={(e) => setManualAddress(e.target.value)}
-                                className="focus-visible:ring-0 focus:border-[#F24452]"
+                                className="focus-visible:ring-0 focus:border-[#F24452] border-[#E5D9D1]"
                             />
                         </div>
                     ) : (
                         <>
                             {/* Tabs para Cliente/Dirección (reduce tamaño visual) */}
                             {isDelivery ? (
-                                <Tabs defaultValue={selectedCustomerId ? 'direccion' : 'cliente'}>
-                                    <TabsList className="grid grid-cols-2 w-full">
-                                        <TabsTrigger value="cliente">Cliente</TabsTrigger>
-                                        <TabsTrigger value="direccion" disabled={!selectedCustomerId}>Dirección</TabsTrigger>
+                                <Tabs defaultValue={selectedCustomerId ? 'direccion' : 'cliente'} className="w-full">
+                                    <TabsList className="grid grid-cols-2 w-full bg-[#F5F1EB] p-1 rounded-lg">
+                                        <TabsTrigger 
+                                            value="cliente" 
+                                            className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-[#F24452] data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
+                                        >
+                                            👤 Cliente
+                                        </TabsTrigger>
+                                        <TabsTrigger 
+                                            value="direccion" 
+                                            disabled={!selectedCustomerId} 
+                                            className="flex items-center justify-center gap-2 rounded-md data-[state=active]:bg-[#F24452] data-[state=active]:text-white data-[state=active]:shadow-md transition-all disabled:opacity-50"
+                                        >
+                                            📍 Dirección
+                                        </TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="cliente" className="space-y-2 pt-2">
                                         {/* Búsqueda de clientes + crear */}

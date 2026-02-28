@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Building2, Receipt } from 'lucide-react';
+import { Calendar, Building2, Receipt, DollarSign, Package } from 'lucide-react';
+import { formatCurrency } from '../lib/utils';
 import type { Expense } from '../types/expense.types';
 
 interface ExpenseDetailsDialogProps {
@@ -25,13 +26,6 @@ export function ExpenseDetailsDialog({ open, onOpenChange, expense }: ExpenseDet
         });
     };
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('es-AR', {
-            style: 'currency',
-            currency: 'ARS'
-        }).format(amount);
-    };
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="bg-white max-w-3xl">
@@ -44,20 +38,24 @@ export function ExpenseDetailsDialog({ open, onOpenChange, expense }: ExpenseDet
                 
                 <div className="space-y-6">
                     {/* Información general */}
-                    <div className="grid grid-cols-2 gap-4 p-4 bg-[#F2EDE4] rounded-lg">
+                    <div className="grid grid-cols-2 gap-4 p-4 bg-gradient-to-br from-[#F2EDE4] to-white rounded-lg border-2 border-[#E5D9D1]">
                         <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-gray-500" />
+                            <div className="p-2 bg-white rounded-lg border border-[#E5D9D1]">
+                                <Calendar className="h-4 w-4 text-[#F24452]" />
+                            </div>
                             <div>
-                                <div className="text-xs text-gray-500">Fecha</div>
-                                <div className="font-medium">{formatDate(expense.date)}</div>
+                                <div className="text-xs text-gray-500 font-medium">Fecha</div>
+                                <div className="font-semibold">{formatDate(expense.date)}</div>
                             </div>
                         </div>
                         
                         <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-gray-500" />
+                            <div className="p-2 bg-white rounded-lg border border-[#E5D9D1]">
+                                <Building2 className="h-4 w-4 text-[#F24452]" />
+                            </div>
                             <div>
-                                <div className="text-xs text-gray-500">Proveedor</div>
-                                <div className="font-medium">
+                                <div className="text-xs text-gray-500 font-medium">Proveedor</div>
+                                <div className="font-semibold">
                                     {expense.supplierName || (
                                         <span className="text-gray-400 italic">Sin proveedor (gasto interno)</span>
                                     )}
@@ -68,11 +66,14 @@ export function ExpenseDetailsDialog({ open, onOpenChange, expense }: ExpenseDet
 
                     {/* Items del gasto */}
                     <div>
-                        <h3 className="font-semibold mb-3">Líneas del Gasto</h3>
-                        <div className="border border-[#E5D9D1] rounded-lg overflow-hidden">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Package className="h-5 w-5 text-[#F24452]" />
+                            <h3 className="font-semibold">Líneas del Gasto</h3>
+                        </div>
+                        <div className="border-2 border-[#E5D9D1] rounded-lg overflow-hidden">
                             <Table>
-                                <TableHeader className="bg-[#F2EDE4]">
-                                    <TableRow>
+                                <TableHeader className="bg-gradient-to-r from-[#F2EDE4] to-[#F8F4F0]">
+                                    <TableRow className="border-b-2 border-[#E5D9D1]">
                                         <TableHead className="font-bold">Insumo</TableHead>
                                         <TableHead className="font-bold text-right">Cantidad</TableHead>
                                         <TableHead className="font-bold text-right">Precio Unitario</TableHead>
@@ -81,7 +82,7 @@ export function ExpenseDetailsDialog({ open, onOpenChange, expense }: ExpenseDet
                                 </TableHeader>
                                 <TableBody>
                                     {expense.items.map((item) => (
-                                        <TableRow key={item.id}>
+                                        <TableRow key={item.id} className="hover:bg-[#FFF9F5] transition-colors border-b border-[#E5D9D1]/50">
                                             <TableCell className="font-medium">
                                                 {item.supplyName}
                                             </TableCell>
@@ -102,9 +103,12 @@ export function ExpenseDetailsDialog({ open, onOpenChange, expense }: ExpenseDet
                     </div>
 
                     {/* Total */}
-                    <div className="flex justify-end items-center gap-4 p-4 bg-[#F2EDE4] rounded-lg">
-                        <span className="text-lg font-semibold">Total del Gasto:</span>
-                        <span className="text-2xl font-bold text-[#F24452]">
+                    <div className="flex justify-between items-center p-4 bg-gradient-to-r from-[#F24452]/10 to-[#F24452]/5 rounded-lg border-2 border-[#F24452]/30">
+                        <div className="flex items-center gap-2">
+                            <DollarSign className="h-6 w-6 text-[#F24452]" />
+                            <span className="text-lg font-semibold">Total del Gasto:</span>
+                        </div>
+                        <span className="text-3xl font-bold text-[#F24452]">
                             {formatCurrency(expense.total)}
                         </span>
                     </div>

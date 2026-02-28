@@ -23,6 +23,7 @@ import type { Customer } from '../types/customer.types';
 import { PaymentMethod as PM, DeliveryMethod as DM } from '../types/order.types';
 // import { CustomerService } from '../services/customer.service';
 import { CustomerAddressSelector } from './CustomerAddressSelector';
+import { formatCurrency } from '../lib/utils';
 import { toast } from 'sonner';
 
 interface CreateOrderDialogProps {
@@ -192,7 +193,7 @@ export function CreateOrderDialog({
                                             <div className="flex-1">
                                                 <div className="font-medium text-sm">{product.title}</div>
                                                 <div className="text-xs text-gray-600">
-                                                    ${product.price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                                                    {formatCurrency(product.price)}
                                                 </div>
                                             </div>
                                             <Button
@@ -220,7 +221,7 @@ export function CreateOrderDialog({
                                                 <div className="flex-1">
                                                     <div className="font-medium text-sm">{combo.name}</div>
                                                     <div className="text-xs text-gray-600">
-                                                        ${combo.price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                                                        {formatCurrency(combo.price)}
                                                     </div>
                                                 </div>
                                                 <Button
@@ -254,7 +255,7 @@ export function CreateOrderDialog({
                                             <div className="flex-1 min-w-0">
                                                 <div className="font-medium text-xs truncate">{item.name}</div>
                                                 <div className="text-xs text-gray-600">
-                                                    ${item.price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                                                    {formatCurrency(item.price)}
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1">
@@ -383,7 +384,7 @@ export function CreateOrderDialog({
                             <div className="flex items-center justify-between bg-[#F24452]/10 p-3 rounded-lg">
                                 <span className="font-bold">TOTAL</span>
                                 <span className="font-bold text-lg text-[#F24452]">
-                                    ${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                                    {formatCurrency(total)}
                                 </span>
                             </div>
                         </div>

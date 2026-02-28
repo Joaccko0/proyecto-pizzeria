@@ -7,6 +7,7 @@ import { DollarSign, Clock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { formatCurrency } from '../lib/utils';
 import type { CashShiftResponse } from '../types/cashshift.types';
 
 interface CashShiftStatusProps {
@@ -86,7 +87,7 @@ export function CashShiftStatus({ cashShift, onOpenClick, onCloseClick, loading 
                     <div className="bg-white rounded-lg p-3 border border-green-100">
                         <p className="text-xs text-gray-600 font-medium">Monto Inicial</p>
                         <p className="text-lg font-bold text-green-700">
-                            ${cashShift.startAmount.toFixed(2)}
+                            {formatCurrency(cashShift.startAmount)}
                         </p>
                     </div>
                     <div className="bg-white rounded-lg p-3 border border-green-100">

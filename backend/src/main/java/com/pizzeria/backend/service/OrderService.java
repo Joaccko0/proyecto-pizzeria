@@ -22,6 +22,7 @@ import com.pizzeria.backend.model.enums.DeliveryMethod;
 import com.pizzeria.backend.model.enums.OrderStatus;
 import com.pizzeria.backend.model.enums.PaymentStatus;
 import com.pizzeria.backend.repository.AddressRepository;
+import com.pizzeria.backend.repository.CashShiftRepository;
 import com.pizzeria.backend.repository.ComboRepository;
 import com.pizzeria.backend.repository.CustomerRepository;
 import com.pizzeria.backend.repository.OrderRepository;
@@ -40,6 +41,7 @@ public class OrderService {
     private final CustomerRepository customerRepository;
     private final AddressRepository addressRepository;
     private final CashShiftService cashShiftService;
+    private final CashShiftRepository cashShiftRepository;
     private final OrderMapper orderMapper;
 
     @Transactional
@@ -147,14 +149,15 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<OrderResponse> getAllOrders(Long businessId) {
-        // Intentar obtener la caja abierta
-        try {
-            var cashShift = cashShiftService.getOpenCashShift(businessId);
+        // Obtener la caja abierta sin lanzar excepciones dentro de la transacción
+        var cashShift = cashShiftRepository.findOpenCashShift(businessId);
+        
+        if (cashShift.isPresent()) {
             // Si hay caja abierta, retornar los pedidos de esa caja
-            return orderRepository.findByBusinessIdAndCashShiftOrderByCreatedAtDesc(businessId, cashShift).stream()
+            return orderRepository.findByBusinessIdAndCashShiftOrderByCreatedAtDesc(businessId, cashShift.get()).stream()
                     .map(orderMapper::toResponse)
                     .toList();
-        } catch (jakarta.persistence.EntityNotFoundException e) {
+        } else {
             // Si no hay caja abierta, retornar lista vacía
             return java.util.Collections.emptyList();
         }

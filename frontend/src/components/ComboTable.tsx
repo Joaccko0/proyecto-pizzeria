@@ -97,7 +97,7 @@ export function ComboTable({ combos, isLoading, onEdit, onDelete }: ComboTablePr
 
                             {/* Precio formateado */}
                             <TableCell className="font-medium">
-                                ${combo.price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                                {formatCurrency(combo.price)}
                             </TableCell>
 
                             {/* Acciones */}

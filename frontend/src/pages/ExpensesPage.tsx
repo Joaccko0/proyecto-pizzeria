@@ -3,7 +3,8 @@ import { useBusiness } from '../context/BusinessContext';
 import { useExpenses } from '../hooks/useExpenses';
 import { useSuppliers } from '../hooks/useSuppliers';
 import { useSupplies } from '../hooks/useSupplies';
-import { Plus, DollarSign } from 'lucide-react';
+import { Plus, DollarSign, TrendingUp, Calendar, Package } from 'lucide-react';
+import { formatCurrency } from '../lib/utils';
 
 import { ExpenseForm } from '../components/ExpenseForm';
 import { ExpenseTable } from '../components/ExpenseTable';
@@ -186,20 +187,35 @@ export default function ExpensesPage() {
 
             {/* Estadísticas rápidas */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-[#E5D9D1]">
-                    <div className="text-sm text-gray-600 mb-1">Gastos Totales</div>
+                <div className="bg-gradient-to-br from-red-50 to-white p-6 rounded-lg shadow-sm border-2 border-[#F24452]/20 hover:border-[#F24452] transition-all">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="text-sm font-medium text-gray-600">Gastos Totales</div>
+                        <div className="p-2 bg-[#F24452]/10 rounded-lg">
+                            <DollarSign className="h-5 w-5 text-[#F24452]" />
+                        </div>
+                    </div>
                     <div className="text-3xl font-bold text-[#F24452]">
-                        ${totalExpenses.toFixed(2)}
+                        {formatCurrency(totalExpenses)}
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-[#E5D9D1]">
-                    <div className="text-sm text-gray-600 mb-1">Gastos Este Mes</div>
-                    <div className="text-3xl font-bold text-[#F24452]">
-                        ${totalThisMonth.toFixed(2)}
+                <div className="bg-gradient-to-br from-orange-50 to-white p-6 rounded-lg shadow-sm border-2 border-orange-200 hover:border-orange-400 transition-all">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="text-sm font-medium text-gray-600">Gastos Este Mes</div>
+                        <div className="p-2 bg-orange-100 rounded-lg">
+                            <Calendar className="h-5 w-5 text-orange-600" />
+                        </div>
+                    </div>
+                    <div className="text-3xl font-bold text-orange-600">
+                        {formatCurrency(totalThisMonth)}
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-[#E5D9D1]">
-                    <div className="text-sm text-gray-600 mb-1">Cantidad de Gastos</div>
+                <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-lg shadow-sm border-2 border-gray-200 hover:border-gray-400 transition-all">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="text-sm font-medium text-gray-600">Cantidad de Gastos</div>
+                        <div className="p-2 bg-gray-100 rounded-lg">
+                            <Package className="h-5 w-5 text-gray-600" />
+                        </div>
+                    </div>
                     <div className="text-3xl font-bold text-gray-800">
                         {expenses.length}
                     </div>
@@ -208,10 +224,25 @@ export default function ExpensesPage() {
 
             {/* Pestañas de navegación */}
             <Tabs defaultValue="expenses" className="w-full">
-                <TabsList className="grid w-full md:w-auto grid-cols-3 bg-[#F2EDE4]">
-                    <TabsTrigger value="expenses" className="cursor-pointer">Gastos</TabsTrigger>
-                    <TabsTrigger value="suppliers" className="cursor-pointer">Proveedores</TabsTrigger>
-                    <TabsTrigger value="supplies" className="cursor-pointer">Insumos</TabsTrigger>
+                <TabsList className="grid w-full md:w-auto grid-cols-3 bg-[#F5F1EB] p-1 rounded-lg">
+                    <TabsTrigger 
+                        value="expenses" 
+                        className="cursor-pointer rounded-md data-[state=active]:bg-[#F24452] data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
+                    >
+                        💰 Gastos
+                    </TabsTrigger>
+                    <TabsTrigger 
+                        value="suppliers" 
+                        className="cursor-pointer rounded-md data-[state=active]:bg-[#F24452] data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
+                    >
+                        🏢 Proveedores
+                    </TabsTrigger>
+                    <TabsTrigger 
+                        value="supplies" 
+                        className="cursor-pointer rounded-md data-[state=active]:bg-[#F24452] data-[state=active]:text-white data-[state=active]:shadow-md transition-all"
+                    >
+                        📦 Insumos
+                    </TabsTrigger>
                 </TabsList>
 
                 {/* Pestaña de Gastos */}

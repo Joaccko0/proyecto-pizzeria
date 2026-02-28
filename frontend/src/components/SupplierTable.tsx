@@ -17,10 +17,10 @@ export function SupplierTable({ suppliers, isLoading, onEdit, onDelete }: Suppli
     
     if (isLoading) {
         return (
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5D9D1] overflow-hidden">
+            <div className="bg-white rounded-lg shadow-sm border-2 border-[#E5D9D1] overflow-hidden">
                 <Table>
-                    <TableHeader className="bg-[#F2EDE4]">
-                        <TableRow>
+                    <TableHeader className="bg-gradient-to-r from-[#F2EDE4] to-[#F8F4F0]">
+                        <TableRow className="border-b-2 border-[#E5D9D1]">
                             <TableHead className="font-bold text-[#262626]">Nombre</TableHead>
                             <TableHead className="font-bold text-[#262626]">Información de Contacto</TableHead>
                             <TableHead className="text-right font-bold text-[#262626]">Acciones</TableHead>
@@ -40,10 +40,10 @@ export function SupplierTable({ suppliers, isLoading, onEdit, onDelete }: Suppli
 
     if (suppliers.length === 0) {
         return (
-            <div className="bg-white rounded-lg shadow-sm border border-[#E5D9D1] overflow-hidden">
+            <div className="bg-white rounded-lg shadow-sm border-2 border-[#E5D9D1] overflow-hidden">
                 <Table>
-                    <TableHeader className="bg-[#F2EDE4]">
-                        <TableRow>
+                    <TableHeader className="bg-gradient-to-r from-[#F2EDE4] to-[#F8F4F0]">
+                        <TableRow className="border-b-2 border-[#E5D9D1]">
                             <TableHead className="font-bold text-[#262626]">Nombre</TableHead>
                             <TableHead className="font-bold text-[#262626]">Información de Contacto</TableHead>
                             <TableHead className="text-right font-bold text-[#262626]">Acciones</TableHead>
@@ -62,10 +62,10 @@ export function SupplierTable({ suppliers, isLoading, onEdit, onDelete }: Suppli
     }
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-[#E5D9D1] overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border-2 border-[#E5D9D1] overflow-hidden">
             <Table>
-                <TableHeader className="bg-[#F2EDE4]">
-                    <TableRow>
+                <TableHeader className="bg-gradient-to-r from-[#F2EDE4] to-[#F8F4F0]">
+                    <TableRow className="border-b-2 border-[#E5D9D1]">
                         <TableHead className="font-bold text-[#262626]">Nombre</TableHead>
                         <TableHead className="font-bold text-[#262626]">Información de Contacto</TableHead>
                         <TableHead className="text-right font-bold text-[#262626]">Acciones</TableHead>
@@ -73,7 +73,7 @@ export function SupplierTable({ suppliers, isLoading, onEdit, onDelete }: Suppli
                 </TableHeader>
                 <TableBody>
                     {suppliers.map((supplier) => (
-                        <TableRow key={supplier.id}>
+                        <TableRow key={supplier.id} className="hover:bg-[#FFF9F5] transition-colors border-b border-[#E5D9D1]/50">
                             {/* Nombre */}
                             <TableCell className="font-medium">
                                 {supplier.name}

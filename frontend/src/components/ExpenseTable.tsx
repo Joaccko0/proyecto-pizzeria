@@ -1,5 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from '../lib/utils';
 import { Edit2, Trash2, Eye, Calendar } from 'lucide-react';
 import type { Expense } from '../types/expense.types';
 
@@ -24,14 +25,6 @@ export function ExpenseTable({ expenses, isLoading, onEdit, onDelete, onView }: 
             month: 'long', 
             day: 'numeric' 
         });
-    };
-
-    // Función helper para formatear moneda
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('es-AR', {
-            style: 'currency',
-            currency: 'ARS'
-        }).format(amount);
     };
 
     if (isLoading) {
@@ -85,10 +78,10 @@ export function ExpenseTable({ expenses, isLoading, onEdit, onDelete, onView }: 
     }
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-[#E5D9D1] overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border-2 border-[#E5D9D1] overflow-hidden">
             <Table>
-                <TableHeader className="bg-[#F2EDE4]">
-                    <TableRow>
+                <TableHeader className="bg-gradient-to-r from-[#F2EDE4] to-[#F8F4F0]">
+                    <TableRow className="border-b-2 border-[#E5D9D1]">
                         <TableHead className="font-bold text-[#262626]">Fecha</TableHead>
                         <TableHead className="font-bold text-[#262626]">Proveedor</TableHead>
                         <TableHead className="font-bold text-[#262626]">Detalle</TableHead>
@@ -98,8 +91,7 @@ export function ExpenseTable({ expenses, isLoading, onEdit, onDelete, onView }: 
                 </TableHeader>
                 <TableBody>
                     {expenses.map((expense) => (
-                        <TableRow key={expense.id}>
-                            {/* Fecha */}
+                        <TableRow key={expense.id} className="hover:bg-[#FFF9F5] transition-colors border-b border-[#E5D9D1]/50">{/* Fecha */}
                             <TableCell className="font-medium">
                                 <div className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4 text-gray-400" />

@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Clock, CreditCard, MapPin, User, Package, X } from 'lucide-react';
+import { formatCurrency } from '../lib/utils';
 import type { OrderResponse, PaymentMethod, DeliveryMethod, PaymentStatus } from '../types/order.types';
 import {
     OrderStatusLabels,
@@ -191,9 +192,7 @@ export function OrderDetailsDialog({
                                         </div>
                                     </div>
                                     <div className="font-semibold text-sm text-[#F24452]">
-                                        ${item.subtotal.toLocaleString('es-AR', {
-                                            minimumFractionDigits: 2
-                                        })}
+                                        {formatCurrency(item.subtotal)}
                                     </div>
                                 </div>
                             ))}
@@ -206,9 +205,7 @@ export function OrderDetailsDialog({
                     <div className="flex items-center justify-between bg-[#F24452]/10 p-4 rounded-lg">
                         <div className="font-bold text-lg">TOTAL</div>
                         <div className="font-bold text-2xl text-[#F24452]">
-                            ${order.total.toLocaleString('es-AR', {
-                                minimumFractionDigits: 2
-                            })}
+                            {formatCurrency(order.total)}
                         </div>
                     </div>
                 </div>

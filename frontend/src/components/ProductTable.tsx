@@ -1,6 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Edit2, Trash2 } from 'lucide-react';
+import { formatCurrency } from '../lib/utils';
 import type { Product } from '../types/inventory.types';
 
 interface ProductTableProps {
@@ -98,7 +99,7 @@ export function ProductTable({ products, isLoading, onEdit, onDelete }: ProductT
 
                             {/* Precio formateado */}
                             <TableCell className="font-medium">
-                                ${product.price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                                {formatCurrency(product.price)}
                             </TableCell>
 
                             {/* Acciones */}

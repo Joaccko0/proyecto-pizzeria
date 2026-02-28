@@ -11,7 +11,7 @@ import { OrdersHistoryView } from '../components/OrdersHistoryView';
 
 export default function OrdersHistoryPage() {
     const { currentBusiness } = useBusiness();
-    const { orders, loading, loadOrdersHistoric } = useOrdersHistoric(currentBusiness?.id);
+    const { orders, cashShifts, loading, loadOrdersHistoric } = useOrdersHistoric(currentBusiness?.id);
 
     // No necesitamos useEffect aquí porque useOrders ya se encarga de cargar
     // cuando cambia currentBusiness?.id
@@ -45,6 +45,7 @@ export default function OrdersHistoryPage() {
                 {/* Vista del Historial */}
                 <OrdersHistoryView
                     orders={orders}
+                    cashShifts={cashShifts}
                     loading={loading}
                 />
             </div>

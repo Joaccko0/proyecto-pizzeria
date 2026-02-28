@@ -28,9 +28,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { formatCurrency } from '../lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, FilterX } from 'lucide-react';
+import { Calendar, FilterX, Wallet } from 'lucide-react';
 import type { OrderResponse, OrderStatus, PaymentStatus, PaymentMethod } from '../types/order.types';
+import type { CashShiftResponse } from '../types/cashshift.types';
 import {
     OrderStatusLabels,
     OrderStatusColors,
@@ -41,9 +43,10 @@ import {
 interface OrdersHistoryViewProps {
     orders: OrderResponse[];
     loading?: boolean;
+    cashShifts?: CashShiftResponse[];
 }
 
-export function OrdersHistoryView({ orders, loading = false }: OrdersHistoryViewProps) {
+export function OrdersHistoryView({ orders, loading = false, cashShifts = [] }: OrdersHistoryViewProps) {
     const ALL = 'ALL';
     const [filterDateFrom, setFilterDateFrom] = useState<string>('');
     const [filterDateTo, setFilterDateTo] = useState<string>('');
@@ -51,22 +54,34 @@ export function OrdersHistoryView({ orders, loading = false }: OrdersHistoryView
     const [filterPaymentStatus, setFilterPaymentStatus] = useState<PaymentStatus | typeof ALL>(ALL);
     const [filterPaymentMethod, setFilterPaymentMethod] = useState<PaymentMethod | typeof ALL>(ALL);
     const [filterCustomer, setFilterCustomer] = useState<string>('');
+    const [filterCashShift, setFilterCashShift] = useState<number | typeof ALL>(ALL);
 
     // Aplicar filtros
     const filteredOrders = useMemo(() => {
         return orders.filter((order) => {
-            // Filtro de fecha desde
-            if (filterDateFrom) {
+            // Obtener la caja a la que pertenece este pedido
+            const orderCashShift = cashShifts.find(cs => cs.id === order.cashShiftId);
+            
+            // Filtro de fecha desde (basado en la fecha de apertura de la caja)
+            if (filterDateFrom && orderCashShift) {
                 const fromDate = new Date(filterDateFrom);
-                const orderDate = new Date(order.createdAt);
-                if (orderDate < fromDate) return false;
+                fromDate.setHours(0, 0, 0, 0); // Ignorar horas
+                
+                const cashShiftDate = new Date(orderCashShift.startDate);
+                cashShiftDate.setHours(0, 0, 0, 0); // Ignorar horas
+                
+                if (cashShiftDate < fromDate) return false;
             }
 
-            // Filtro de fecha hasta
-            if (filterDateTo) {
+            // Filtro de fecha hasta (basado en la fecha de apertura de la caja)
+            if (filterDateTo && orderCashShift) {
                 const toDate = new Date(filterDateTo);
-                const orderDate = new Date(order.createdAt);
-                if (orderDate > toDate) return false;
+                toDate.setHours(23, 59, 59, 999); // Fin del día
+                
+                const cashShiftDate = new Date(orderCashShift.startDate);
+                cashShiftDate.setHours(0, 0, 0, 0); // Ignorar horas
+                
+                if (cashShiftDate > toDate) return false;
             }
 
             // Filtro de estado del pedido
@@ -89,16 +104,23 @@ export function OrdersHistoryView({ orders, loading = false }: OrdersHistoryView
                 return false;
             }
 
+            // Filtro de caja
+            if (filterCashShift !== ALL && order.cashShiftId !== filterCashShift) {
+                return false;
+            }
+
             return true;
         });
     }, [
         orders,
+        cashShifts,
         filterDateFrom,
         filterDateTo,
         filterOrderStatus,
         filterPaymentStatus,
         filterPaymentMethod,
-        filterCustomer
+        filterCustomer,
+        filterCashShift
     ]);
 
     const handleClearFilters = () => {
@@ -108,24 +130,22 @@ export function OrdersHistoryView({ orders, loading = false }: OrdersHistoryView
         setFilterPaymentStatus(ALL);
         setFilterPaymentMethod(ALL);
         setFilterCustomer('');
+        setFilterCashShift(ALL);
     };
 
-    const hasActiveFilters = filterDateFrom || filterDateTo || filterOrderStatus !== ALL || filterPaymentStatus !== ALL || filterPaymentMethod !== ALL || filterCustomer;
+    const hasActiveFilters = filterDateFrom || filterDateTo || filterOrderStatus !== ALL || filterPaymentStatus !== ALL || filterPaymentMethod !== ALL || filterCustomer || filterCashShift !== ALL;
 
     return (
         <div className="space-y-6">
             <div>
-                <h2 className="text-2xl font-bold text-gray-800">Historial de Pedidos</h2>
                 <p className="text-gray-600 mt-1">Total: {filteredOrders.length} pedidos encontrados</p>
             </div>
 
-            {/* Panel de Filtros */}
             <Card className="bg-white">
                 <CardHeader>
                     <CardTitle className="text-lg">Filtros</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {/* Fila 1: Fechas y Cliente */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="filterDateFrom">Desde</Label>
@@ -166,9 +186,39 @@ export function OrdersHistoryView({ orders, loading = false }: OrdersHistoryView
                                 className="bg-[#F2EDE4]"
                             />
                         </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="filterCashShift">Caja</Label>
+                            <Select value={filterCashShift === ALL ? ALL : String(filterCashShift)} onValueChange={(value) => setFilterCashShift(value === ALL ? ALL : Number(value))}>
+                                <SelectTrigger className="h-10 bg-[#F2EDE4] border-[#E5D9D1] focus:border-[#F24452] focus:ring-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                                    <SelectValue placeholder="Todas" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-[#F2EDE4] border border-[#E5D9D1] shadow-lg max-h-[260px]">
+                                    <SelectItem value={ALL}>Todas las cajas</SelectItem>
+                                    {cashShifts.map((cs) => {
+                                        const openDate = new Date(cs.startDate).toLocaleDateString('es-ES', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric'
+                                        });
+                                        const closeDate = cs.endDate
+                                            ? new Date(cs.endDate).toLocaleDateString('es-ES', {
+                                                day: '2-digit',
+                                                month: '2-digit',
+                                                year: 'numeric'
+                                            })
+                                            : 'Abierta';
+                                        return (
+                                            <SelectItem key={cs.id} value={String(cs.id)}>
+                                                #{cs.id} - {openDate} {cs.endDate ? `- ${closeDate}` : '(🔓 Abierta)'}
+                                            </SelectItem>
+                                        );
+                                    })}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
 
-                    {/* Fila 2: Estados y Método de Pago */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="filterOrderStatus">Estado del Pedido</Label>
@@ -234,7 +284,6 @@ export function OrdersHistoryView({ orders, loading = false }: OrdersHistoryView
                 </CardContent>
             </Card>
 
-            {/* Tabla de Pedidos */}
             <Card className="bg-white">
                 <CardContent className="p-0">
                     {loading ? (
@@ -255,6 +304,7 @@ export function OrdersHistoryView({ orders, loading = false }: OrdersHistoryView
                                 <TableHeader>
                                     <TableRow className="border-b border-gray-200 bg-gray-50">
                                         <TableHead className="font-semibold text-gray-700">ID</TableHead>
+                                        <TableHead className="font-semibold text-gray-700">Caja</TableHead>
                                         <TableHead className="font-semibold text-gray-700">Fecha</TableHead>
                                         <TableHead className="font-semibold text-gray-700">Cliente</TableHead>
                                         <TableHead className="font-semibold text-gray-700">Estado</TableHead>
@@ -265,31 +315,55 @@ export function OrdersHistoryView({ orders, loading = false }: OrdersHistoryView
                                 </TableHeader>
                                 <TableBody>
                                     {filteredOrders.map((order) => {
-                                        const dateValue = new Date(order.createdAt);
-                                        const dateDisplay = Number.isNaN(dateValue.getTime())
-                                            ? order.createdAt
-                                            : dateValue.toLocaleDateString('es-ES', {
-                                                year: 'numeric',
-                                                month: 'short',
-                                                day: 'numeric',
+                                        // Buscar la caja del pedido para mostrar su fecha de apertura
+                                        const orderCashShift = cashShifts.find(cs => cs.id === order.cashShiftId);
+                                        
+                                        // Fecha del pedido (hora específica)
+                                        const orderDate = new Date(order.createdAt);
+                                        const orderTimeDisplay = !Number.isNaN(orderDate.getTime())
+                                            ? orderDate.toLocaleTimeString('es-ES', {
                                                 hour: '2-digit',
                                                 minute: '2-digit'
+                                            })
+                                            : '';
+                                        
+                                        // Fecha de la caja (día completo)
+                                        const cashShiftDate = orderCashShift ? new Date(orderCashShift.startDate) : null;
+                                        const dateDisplay = cashShiftDate && !Number.isNaN(cashShiftDate.getTime())
+                                            ? cashShiftDate.toLocaleDateString('es-ES', {
+                                                year: 'numeric',
+                                                month: 'short',
+                                                day: 'numeric'
+                                            })
+                                            : orderDate.toLocaleDateString('es-ES', {
+                                                year: 'numeric',
+                                                month: 'short',
+                                                day: 'numeric'
                                             });
+                                        
                                         const totalValue = typeof order.total === 'number'
                                             ? order.total
                                             : Number(order.total);
                                         const totalDisplay = Number.isFinite(totalValue)
-                                            ? totalValue.toFixed(2)
-                                            : '0.00';
+                                            ? formatCurrency(totalValue)
+                                            : formatCurrency(0);
 
                                         return (
                                             <TableRow key={order.id} className="border-b border-gray-200 hover:bg-gray-50">
                                                 <TableCell className="font-medium text-gray-900">#{order.id}</TableCell>
                                                 <TableCell className="text-gray-600">
-                                                    {dateDisplay}
+                                                    <div className="flex items-center gap-1">
+                                                        <Wallet className="h-3 w-3 text-[#F24452]" />
+                                                        <span className="text-xs">#{order.cashShiftId || 'N/A'}</span>
+                                                    </div>
                                                 </TableCell>
                                                 <TableCell className="text-gray-600">
-                                                    {order.customerName || 'Sin cliente'}
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium">{dateDisplay}</span>
+                                                        <span className="text-xs text-gray-500">{orderTimeDisplay}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-gray-600">{order.customerName || 'Sin cliente'}
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge className={`${OrderStatusColors[order.orderStatus]} border`}>
@@ -313,7 +387,7 @@ export function OrdersHistoryView({ orders, loading = false }: OrdersHistoryView
                                                     </span>
                                                 </TableCell>
                                                 <TableCell className="text-right font-semibold text-gray-900">
-                                                    ${totalDisplay}
+                                                    {totalDisplay}
                                                 </TableCell>
                                             </TableRow>
                                         );

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Building2, Phone } from 'lucide-react';
 import type { Supplier, SupplierRequest } from '../types/supplier.types';
 import { toast } from 'sonner';
 
@@ -71,7 +72,10 @@ export function SupplierForm({ open, onOpenChange, onSubmit, editingSupplier }: 
                 <div className="grid gap-4 py-4">
                     {/* Nombre */}
                     <div className="grid gap-2">
-                        <Label htmlFor="name" className="text-sm">Nombre del Proveedor *</Label>
+                        <Label htmlFor="name" className="text-sm flex items-center gap-1.5">
+                            <Building2 className="h-4 w-4 text-[#F24452]" />
+                            Nombre del Proveedor *
+                        </Label>
                         <Input
                             id="name"
                             value={formData.name}
@@ -84,7 +88,10 @@ export function SupplierForm({ open, onOpenChange, onSubmit, editingSupplier }: 
 
                     {/* Información de contacto */}
                     <div className="grid gap-2">
-                        <Label htmlFor="contactInfo" className="text-sm">Información de Contacto</Label>
+                        <Label htmlFor="contactInfo" className="text-sm flex items-center gap-1.5">
+                            <Phone className="h-4 w-4 text-[#F24452]" />
+                            Información de Contacto
+                        </Label>
                         <Textarea
                             id="contactInfo"
                             value={formData.contactInfo}
