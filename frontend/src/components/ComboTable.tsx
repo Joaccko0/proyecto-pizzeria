@@ -2,6 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Edit2, Trash2 } from 'lucide-react';
 import type { Combo } from '../types/inventory.types';
+import { formatCurrency } from '../lib/utils';
 
 interface ComboTableProps {
     combos: Combo[];

@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useBusiness } from '../context/BusinessContext';
 import { useOrdersHistoric } from '../hooks/useOrdersHistoric';
+import { useExpenses } from '../hooks/useExpenses';
 import type { PaymentMethod } from '../types/order.types';
 import { PaymentMethodLabels } from '../types/order.types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -122,7 +123,15 @@ function PieChart({ data }: { data: { label: string; value: number }[] }) {
 
 function HourlyTrend({ counts }: { counts: number[] }) {
     const max = Math.max(...counts, 0);
-    const labels = new Set([0, 6, 12, 18, 23]);
+    const labels = new Set([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]);
+
+    if (max === 0) {
+        return (
+            <div className="flex items-center justify-center h-48 text-sm text-gray-500">
+                Sin pedidos en el rango seleccionado
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-3">
@@ -131,25 +140,44 @@ function HourlyTrend({ counts }: { counts: number[] }) {
                 style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}
             >
                 {counts.map((count, hour) => {
-                    const height = max ? Math.max(6, Math.round((count / max) * 100)) : 6;
+                    const heightPercent = count > 0 ? Math.max(10, Math.round((count / max) * 100)) : 0;
                     return (
-                        <div key={hour} className="flex flex-col items-center">
-                            <div
-                                title={`${hour.toString().padStart(2, '0')}:00 · ${count} pedidos`}
-                                className="w-full rounded-md bg-[#F24452]/80"
-                                style={{ height: `${height}%` }}
-                            />
-                            {labels.has(hour) && (
-                                <span className="text-[10px] text-gray-500 mt-1">
-                                    {hour}
-                                </span>
+                        <div 
+                            key={hour} 
+                            className="flex flex-col items-center justify-end h-full group relative"
+                            title={`${hour.toString().padStart(2, '0')}:00 - ${count} ${count === 1 ? 'pedido' : 'pedidos'}`}
+                        >
+                            {count > 0 ? (
+                                <div
+                                    className="w-full rounded-t-md bg-[#F24452] group-hover:bg-[#F24452]/70 transition-all duration-200 cursor-pointer"
+                                    style={{ height: `${heightPercent}%` }}
+                                />
+                            ) : (
+                                <div 
+                                    className="w-full opacity-0 group-hover:opacity-20 group-hover:bg-gray-300 transition-all duration-200 cursor-pointer rounded-t-md"
+                                    style={{ height: '4%' }}
+                                />
                             )}
+                            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                                {hour.toString().padStart(2, '0')}:00 • {count} {count === 1 ? 'pedido' : 'pedidos'}
+                            </div>
                         </div>
                     );
                 })}
             </div>
-            <div className="text-xs text-gray-500">
-                Barras más altas indican más pedidos por hora
+            <div
+                className="grid gap-1"
+                style={{ gridTemplateColumns: 'repeat(24, minmax(0, 1fr))' }}
+            >
+                {counts.map((_, hour) => (
+                    <div key={`label-${hour}`} className="flex justify-center">
+                        {labels.has(hour) && (
+                            <span className="text-[10px] text-gray-600 font-medium">
+                                {hour}h
+                            </span>
+                        )}
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -158,6 +186,7 @@ function HourlyTrend({ counts }: { counts: number[] }) {
 export default function StatsPage() {
     const { currentBusiness } = useBusiness();
     const { orders, loading, loadOrdersHistoric } = useOrdersHistoric(currentBusiness?.id);
+    const { expenses } = useExpenses(currentBusiness?.id || null);
 
     const [filterDateFrom, setFilterDateFrom] = useState('');
     const [filterDateTo, setFilterDateTo] = useState('');
@@ -174,6 +203,19 @@ export default function StatsPage() {
             return true;
         });
     }, [orders, filterDateFrom, filterDateTo]);
+
+    const filteredExpenses = useMemo(() => {
+        const start = toDateStart(filterDateFrom);
+        const end = toDateEnd(filterDateTo);
+
+        return expenses.filter((expense) => {
+            const dateValue = new Date(expense.date);
+            if (Number.isNaN(dateValue.getTime())) return false;
+            if (start && dateValue < start) return false;
+            if (end && dateValue > end) return false;
+            return true;
+        });
+    }, [expenses, filterDateFrom, filterDateTo]);
 
     const stats = useMemo(() => {
         const nonCancelled = filteredOrders.filter((order) => order.orderStatus !== 'CANCELLED');
@@ -251,6 +293,46 @@ export default function StatsPage() {
         };
     }, [filteredOrders]);
 
+    const expenseStats = useMemo(() => {
+        const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + (Number(expense.total) || 0), 0);
+        const expenseCount = filteredExpenses.length;
+
+        const supplierTotals = new Map<string, number>();
+        filteredExpenses.forEach((expense) => {
+            const supplier = expense.supplierName || 'Sin proveedor';
+            supplierTotals.set(supplier, (supplierTotals.get(supplier) || 0) + Number(expense.total));
+        });
+
+        const topSuppliers = Array.from(supplierTotals.entries())
+            .map(([name, total]) => ({ name, total }))
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 5);
+
+        const categoryTotals = new Map<string, number>();
+        filteredExpenses.forEach((expense) => {
+            expense.items.forEach((item) => {
+                const category = item.supplyName || 'Sin categoría';
+                categoryTotals.set(category, (categoryTotals.get(category) || 0) + Number(item.subtotal));
+            });
+        });
+
+        const topCategories = Array.from(categoryTotals.entries())
+            .map(([name, total]) => ({ name, total }))
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 8);
+
+        const expensePieData = topCategories.map(cat => ({ label: cat.name, value: cat.total }));
+
+        return {
+            totalExpenses,
+            expenseCount,
+            avgExpense: expenseCount ? totalExpenses / expenseCount : 0,
+            topSuppliers,
+            topCategories,
+            expensePieData
+        };
+    }, [filteredExpenses]);
+
     const hasActiveFilters = filterDateFrom || filterDateTo;
 
     const handleClearFilters = () => {
@@ -322,13 +404,40 @@ export default function StatsPage() {
                     </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <StatCard title="Ventas Totales" value={formatCurrency(stats.totalRevenue)} />
-                    <StatCard title="Pedidos Totales" value={stats.totalOrders.toString()} />
-                    <StatCard title="Ticket Promedio" value={formatCurrency(stats.avgTicket)} />
-                    <StatCard title="Pedidos Pagados" value={stats.paidOrdersCount.toString()} />
-                    <StatCard title="Pedidos Cancelados" value={stats.cancelledCount.toString()} />
-                    <StatCard title="Items Vendidos" value={stats.totalItemsSold.toString()} />
+                <div className="space-y-6">
+                    <div>
+                        <h2 className="text-xl font-semibold text-[#0D0D0D] mb-4">📊 Ingresos</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <StatCard title="Ventas Totales" value={formatCurrency(stats.totalRevenue)} />
+                            <StatCard title="Pedidos Totales" value={stats.totalOrders.toString()} />
+                            <StatCard title="Ticket Promedio" value={formatCurrency(stats.avgTicket)} />
+                            <StatCard title="Pedidos Pagados" value={stats.paidOrdersCount.toString()} />
+                            <StatCard title="Pedidos Cancelados" value={stats.cancelledCount.toString()} />
+                            <StatCard title="Items Vendidos" value={stats.totalItemsSold.toString()} />
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 className="text-xl font-semibold text-[#0D0D0D] mb-4">💸 Gastos</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <StatCard title="Gastos Totales" value={formatCurrency(expenseStats.totalExpenses)} variant="expense" />
+                            <StatCard title="Cantidad de Gastos" value={expenseStats.expenseCount.toString()} variant="expense" />
+                            <StatCard title="Gasto Promedio" value={formatCurrency(expenseStats.avgExpense)} variant="expense" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 className="text-xl font-semibold text-[#0D0D0D] mb-4">💰 Balance</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <StatCard 
+                                title="Ingresos Netos" 
+                                value={formatCurrency(stats.totalRevenue - expenseStats.totalExpenses)} 
+                                variant={stats.totalRevenue - expenseStats.totalExpenses >= 0 ? 'positive' : 'negative'} 
+                            />
+                            <StatCard title="Total Ingresos" value={formatCurrency(stats.totalRevenue)} variant="neutral" />
+                            <StatCard title="Total Egresos" value={formatCurrency(expenseStats.totalExpenses)} variant="neutral" />
+                        </div>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -410,20 +519,63 @@ export default function StatsPage() {
                     </Card>
                 </div>
 
-                <div className="text-xs text-gray-500">
-                    Las métricas de ventas se calculan solo con pedidos pagados y no cancelados.
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card className="bg-white">
+                        <CardHeader>
+                            <CardTitle className="text-lg">Gastos por Categoría</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <PieChart data={expenseStats.expensePieData} />
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-white">
+                        <CardHeader>
+                            <CardTitle className="text-lg">Top Proveedores</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {expenseStats.topSuppliers.map((supplier, index) => (
+                                <div key={supplier.name} className="flex items-center justify-between text-sm border-b border-gray-100 pb-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-400">#{index + 1}</span>
+                                        <span className="font-medium text-gray-700">{supplier.name}</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="font-semibold text-[#F24452]">{formatCurrency(supplier.total)}</div>
+                                    </div>
+                                </div>
+                            ))}
+                            {expenseStats.topSuppliers.length === 0 && (
+                                <div className="text-sm text-gray-500">No hay gastos en el rango seleccionado.</div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div className="text-xs text-gray-500 space-y-1">
+                    <div>• Las métricas de ventas se calculan solo con pedidos pagados y no cancelados.</div>
+                    <div>• Los gastos incluyen todos los registros en el rango de fechas seleccionado.</div>
+                    <div>• El balance neto se calcula como Ingresos - Gastos.</div>
                 </div>
             </div>
         </div>
     );
 }
 
-function StatCard({ title, value }: { title: string; value: string }) {
+function StatCard({ title, value, variant = 'default' }: { title: string; value: string; variant?: 'default' | 'expense' | 'positive' | 'negative' | 'neutral' }) {
+    const colorClasses = {
+        default: 'text-[#0D0D0D]',
+        expense: 'text-[#F24452]',
+        positive: 'text-green-600',
+        negative: 'text-red-600',
+        neutral: 'text-gray-700'
+    };
+
     return (
         <Card className="bg-white">
             <CardContent className="p-6">
                 <div className="text-sm text-gray-600 mb-1">{title}</div>
-                <div className="text-2xl font-bold text-[#0D0D0D]">{value}</div>
+                <div className={`text-2xl font-bold ${colorClasses[variant]}`}>{value}</div>
             </CardContent>
         </Card>
     );
